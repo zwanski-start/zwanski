@@ -1,0 +1,7 @@
+{
+  "extends": "@proofbridge/config/tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["chrome", "node"]
+  },
+  "include": ["entrypoints", "lib", "e2e", "*.ts", "env.d.ts"]
+}
