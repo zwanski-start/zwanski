@@ -1,0 +1,22 @@
+{
+  "name": "@proofbridge/share-server",
+  "version": "0.0.0",
+  "private": true,
+  "description": "OPTIONAL self-hosted share service: stores client-encrypted dossier ciphertext with expiry, revocation and access counts. Zero runtime dependencies.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "start": "node src/main.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@proofbridge/config": "workspace:*",
+    "@proofbridge/core": "workspace:*",
+    "@types/node": "^24.19.2",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5"
+  }
+}
