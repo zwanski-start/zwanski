@@ -80,3 +80,22 @@ Next.js telemetry is disabled by the app's scripts (`apps/web/scripts/next.mjs`)
 - **"Could not open the local database"** — the browser blocks IndexedDB (some private modes do).
   Use a normal window.
 - **Port in use** — `PORT=<free port> pnpm dev`.
+
+## 6. Optional: local AI suggestions and languages
+
+- **Language:** use the selector in the header (English, Français, العربية). The choice is
+  saved in this browser.
+- **AI suggestions are off by default** and are never needed. To try them with a model on your
+  own machine:
+
+  ```sh
+  # https://ollama.com — runs locally; allow the app's origin to call it
+  OLLAMA_ORIGINS=http://localhost:3000 ollama serve
+  ollama pull llama3.2
+  ```
+
+  Then go to Settings → AI assistance, keep `http://localhost:11434`, tick the consent box and
+  enable it. In Opportunity Lab, "Preview the request" shows the exact JSON that would be sent.
+  Only the pasted listing text is sent, and only when you click "Send to local model". Remote
+  and cloud endpoints are refused.
+- **PDF:** Share Studio → "Download dossier (PDF)".

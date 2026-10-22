@@ -50,3 +50,55 @@ Environment: Linux, Node 26.7.0, pnpm 12.11.2, Playwright 1.64.1 driving Chromiu
 - e2e is Chromium-only; no Firefox/WebKit run.
 - Parser coverage is keyword-based; tested on the fixture listing, bullets/numbered lists,
   semicolons, whole-word alias matching, eligibility/language/portfolio detection, size bounds.
+
+## 2026-10-22 — Phase 3 gate (issue #6)
+
+Environment: Linux, Node 26.7.0, pnpm 12.11.2, Playwright 1.64.1 driving the system Chromium
+(`PW_CHROMIUM_PATH=/usr/bin/chromium`), e2e on `PORT=5483`; qpdf 12 locally.
+
+| Command | Result |
+| --- | --- |
+| `pnpm lint` | ✓ no findings |
+| `pnpm typecheck` | ✓ 5 packages |
+| `pnpm test` | ✓ 69 passed: core 15, fixtures 24, ai 9, storage 8, web 13 |
+| `pnpm build` | ✓ static routes incl. `/settings` |
+| `pnpm e2e` | ✓ 10 passed: `hero-workflow.spec.ts` 4 (unchanged), `phase3.spec.ts` 6 |
+
+### Gate checklist
+
+- **Consent + egress: nothing leaves without explicit opt-in.**
+  - `packages/ai/src/ai.test.ts`: a fetch spy is never called when AI is off by default,
+    enabled without consent, consent revoked, consent given for another origin, or the
+    endpoint is off-device. `guardedFetch` refuses before any I/O. Only loopback endpoints can
+    be consented to. With consent, the body sent equals the previewed body (fields `model`,
+    `prompt`, `stream`, `format`, `options`), with `credentials: omit` and `redirect: error`.
+    The egress log holds metadata, not content.
+  - e2e "AI is off by default": the full flow (Settings, Opportunity Lab import, Share Studio)
+    makes zero requests to any origin other than the app's.
+  - e2e "enabling without ticking consent is impossible, and cloud endpoints are refused".
+  - e2e "with consent": consenting and previewing send nothing. Send makes exactly one POST to
+    `localhost:11434/api/generate` (mocked by Playwright) with the previewed body. After revoke,
+    no further egress.
+- **AI disabled → all Phase 1 e2e tests still pass:** the 4 `hero-workflow.spec.ts` tests pass
+  unchanged in the same run. The deterministic paths are also unit-tested as identical to the
+  fallback (`suggestRequirements` returns `parseRequirements` output in every refused or failed
+  case), and e2e "endpoint down" shows the fallback message and imports only the
+  deterministic requirements.
+- **Localization smoke EN/FR/AR incl. RTL:** `apps/web/src/lib/i18n.test.tsx` checks catalog
+  key and placeholder parity, that Arabic is Arabic script, localized dates, that Arabic sets
+  `<html dir=rtl lang=ar>` with Arabic nav and headings and French switches back to LTR, and
+  the boot-script whitelist. e2e "localization smoke": FR nav, heading, status ("Étayée") and
+  date ("2 févr. 2026"); AR `dir=rtl`, heading, status ("مدعوم"), date ("2 فبراير 2026"),
+  computed `direction: rtl`, brand placed to the right of the nav; persists across navigation
+  and reload; back to EN. Checked visually in Chromium: Arabic shell RTL, English user data
+  reads LTR inside it.
+- **PDF export produces a valid, source-linked dossier:** `packages/fixtures/src/pdf.test.ts`
+  checks the structure (every xref offset lands on its `N 0 obj`, `startxref` lands on the
+  xref table, stream lengths are exact), that output is deterministic, has no
+  JS/launch/embedded files, contains every requirement, claim, source label, capture date and
+  SHA-256 from the JSON dossier, has a URI link annotation for an http(s) source, applies the
+  same disclosure as the JSON (private evidence absent, partial redaction has no excerpt),
+  uses French labels, counts replaced characters, and paginates. `qpdf --check`: "No syntax
+  or stream encoding errors" (when qpdf is installed). e2e "PDF export" downloads through the
+  UI, checks content and disclosure against the preview, and checks French labels plus
+  `/Lang (fr)`. `pdftotext` on a sample shows the expected layout.

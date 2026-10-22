@@ -11,7 +11,12 @@ packages/core       Zod schemas + inferred types for the domain model; integrity
                     (dangling references, duplicate ids, explicit requirement counts);
                     deterministic requirement parser (parser.ts) and matching engine
                     (matching.ts); pure vault ops (ops.ts); dossier format (dossier.ts);
-                    backup parse/serialize + dataset migration (backup.ts, migrate.ts).
+                    backup parse/serialize + dataset migration (backup.ts, migrate.ts);
+                    dependency-free PDF rendering of a dossier (pdf.ts).
+packages/ai         OPTIONAL, consent-gated AI suggestions: device-local settings + consent
+                    (settings.ts), the single egress boundary `guardedFetch` (egress.ts) and
+                    Ollama requirement-extraction suggestions that degrade to the
+                    deterministic parser (suggest.ts). Pure; fetch/clock are injected.
 packages/storage    Dexie 4 IndexedDB database: versioned schema list (MIGRATIONS),
                     import/export/seed/clear, applyChange (atomic diff commit of a pure op),
                     replaceAll (restore). Validates with core schemas on every read/write.
@@ -19,10 +24,40 @@ packages/fixtures   DEMO / SYNTHETIC dataset for the §3 hero workflow, schema-v
 packages/config     Shared tsconfig base.
 ```
 
-Dependency direction: `web → storage → core`, `web → fixtures → core`. `core` has no runtime
+Dependency direction: `web → storage → core`, `web → fixtures → core`, `web → ai → core`. `core` has no runtime
 dependency other than Zod and never touches I/O.
 
-Planned per directive §4 (not created yet): `apps/extension`, `packages/{evidence,graph,ai,ui}`.
+Planned per directive §4 (not created yet): `apps/extension`, `packages/{evidence,graph,ui}`.
+
+## Localization (EN / FR / AR)
+
+`apps/web/src/lib/messages.ts` holds the string catalogs (English is the source; a unit test
+enforces that French and Arabic define every key with the same placeholders).
+`lib/i18n.tsx` exposes `useI18n()` (translate, status labels, `Intl` dates per locale, PDF
+labels) from a device-local preference (`localStorage["proofbridge.locale"]`, default `en`).
+`DocumentLocale` keeps `<html lang dir>` in sync; an inline pre-paint script applies a saved
+`fr`/`ar` before hydration so Arabic does not flash LTR. Layout uses logical properties
+(`ps-*`, `pe-*`, `text-start`) and paragraphs use `unicode-bidi: plaintext`, so user data in
+another script keeps its own direction. Translated: app shell, navigation, page headers, status
+labels, Compass, Share Studio, Settings, the Opportunity Lab table header and the AI panel.
+Still English-only: Evidence Vault forms + inspector, review controls, rationales produced by
+the matcher, and every user-entered value (never translated).
+
+## Optional AI (Phase 3)
+
+```
+Settings (consent per exact loopback origin + scope "listing-text")
+   └─ Opportunity Lab: preview exact JSON → user clicks Send
+        └─ suggestRequirements → guardedFetch (refuses unless enabled + consent + same origin + loopback)
+             └─ reply: size-capped, Zod-validated, control/bidi chars stripped, de-duplicated,
+                classified by the deterministic rules → checkboxes (unverified)
+                  └─ accepted lines → addOpportunity(acceptedSuggestions) → origin "ai-suggestion"
+                       → statuses from the deterministic matcher only
+```
+
+Any refusal or failure returns the deterministic parse plus a reason; nothing throws into the UI.
+Settings and the metadata-only egress log live in `localStorage` (not in the vault, not in
+backups). Cloud providers are not implemented (would need provider accounts — blocked).
 
 ## Data flow
 
@@ -65,10 +100,16 @@ and never travels over HTTP.
 - **Dossier** (`proofbridge.dossier` v1, JSON): one opportunity's requirements, statuses,
   rationales and disclosed evidence. Excludes private claims/artifacts, `redacted` artifacts and
   rejected links (counted as `withheld`); text excerpts only for `redaction: none`.
+- **Dossier PDF**: rendered from the same `Dossier` object (identical disclosure). PDF 1.7, two
+  standard fonts (Helvetica/-Bold, WinAnsi), no compression, no scripts, no embedded files.
+  Every evidence item lists its source, capture date and SHA-256; http(s) sources become URI link
+  annotations. Labels follow the UI language (EN/FR; Arabic UI → English labels, see limits).
 - **Vault backup**: the schema-versioned `Dataset` JSON. Restore = size check → JSON.parse →
   migrate → schema + unique ids + no dangling refs → replace the vault in one transaction.
 
-No network request is made by the app at runtime. There is no backend, no auth, no sync.
+No network request is made by the app at runtime unless the user opts in to AI suggestions and
+then explicitly sends a previewed request to a model on their own machine. There is no backend,
+no auth, no sync.
 
 ## Domain model
 
