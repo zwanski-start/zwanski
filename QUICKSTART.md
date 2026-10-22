@@ -53,7 +53,25 @@ pnpm lint        # ESLint (typescript-eslint, Next, React hooks)
 pnpm typecheck   # tsc --noEmit in every package
 pnpm test        # Vitest in every package (IndexedDB via fake-indexeddb)
 pnpm build       # Next.js production build
+pnpm e2e         # Playwright smoke on the production build (run `pnpm build` first), port 5290
 ```
+
+`pnpm e2e` needs a Chromium once: `pnpm --filter @proofbridge/web exec playwright install chromium`.
+Alternatively point it at an installed Chromium: `PW_CHROMIUM_PATH=/usr/bin/chromium pnpm e2e`.
+Use `PORT=<port> pnpm e2e` if 5290 is taken.
+
+## 6. Try the §3 demo by hand
+
+1. **Opportunity Lab** — TypeScript and PostgreSQL are *Supported*, deployment *Uncertain*, two
+   case studies *Not yet supported*, language *Unknown*.
+2. **Evidence Vault → Add evidence** — kind "Write-up / case study", any title and claim → Save.
+   The inspector shows its coverage; the case-studies requirement turns *Supported* in Opportunity
+   Lab, Proof Graph and the Share Studio dossier preview.
+3. Remove that claim in the inspector → every surface reverts.
+4. Production build only: load once online, go offline, reload — the app shell comes from the
+   service worker and the vault from IndexedDB.
+5. **Share Studio** — download the dossier (JSON) or a vault backup; restore the backup in another
+   browser profile.
 
 Next.js telemetry is disabled by the app's scripts (`apps/web/scripts/next.mjs`).
 

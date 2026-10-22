@@ -3,6 +3,9 @@ import {
   DatasetSchema,
   ENTITY_TABLES,
   SCHEMA_VERSION,
+  findDanglingReferences,
+  findDuplicateIds,
+  type AuditEvent,
   type BridgeTask,
   type ClaimSkillLink,
   type Dataset,
@@ -44,6 +47,19 @@ export const MIGRATIONS: ReadonlyArray<{
       meta: "key",
     },
   },
+  {
+    // Phase 1: change history table; artifacts gain a redaction state (defaults to "none").
+    version: 2,
+    stores: { auditEvents: "id, entityId, at" },
+    upgrade: async (tx) => {
+      await tx
+        .table("artifacts")
+        .toCollection()
+        .modify((a: { redaction?: string }) => {
+          a.redaction ??= "none";
+        });
+    },
+  },
 ];
 
 export const DB_VERSION = MIGRATIONS[MIGRATIONS.length - 1]!.version;
@@ -67,6 +83,7 @@ export type ProofBridgeDB = Dexie & {
   requirements: DexieTable<OpportunityRequirement, "id">;
   requirementEvidenceLinks: DexieTable<RequirementEvidenceLink, "id">;
   bridgeTasks: DexieTable<BridgeTask, "id">;
+  auditEvents: DexieTable<AuditEvent, "id">;
   meta: DexieTable<MetaRow, "key">;
 };
 
@@ -113,5 +130,52 @@ export async function exportDataset(db: ProofBridgeDB): Promise<Dataset> {
 export async function clearAll(db: ProofBridgeDB): Promise<void> {
   await db.transaction("rw", db.tables, async () => {
     await Promise.all(db.tables.map((t) => t.clear()));
+  });
+}
+
+/** Throws unless the dataset is schema-valid with unique ids and no dangling relations. */
+function assertIntact(data: Dataset): Dataset {
+  const parsed = DatasetSchema.parse(data);
+  const dupes = findDuplicateIds(parsed);
+  if (dupes.length > 0) throw new Error(`Refusing to write duplicate ids: ${dupes.join(", ")}`);
+  const dangling = findDanglingReferences(parsed);
+  if (dangling.length > 0) throw new Error(`Refusing to write ${dangling.length} broken reference(s)`);
+  return parsed;
+}
+
+/**
+ * Applies a pure dataset transformation (see `@proofbridge/core` ops) atomically: reads the
+ * vault, computes the next state, validates it, and writes only the rows that changed
+ * (puts + deletes) in one IndexedDB transaction. Returns the persisted dataset.
+ */
+export async function applyChange(db: ProofBridgeDB, change: (data: Dataset) => Dataset): Promise<Dataset> {
+  return db.transaction("rw", ENTITY_TABLES.map((t) => db.table(t)), async () => {
+    const before = await exportDataset(db);
+    const after = assertIntact(change(before));
+    for (const t of ENTITY_TABLES) {
+      const prev = new Map<string, unknown>(before[t].map((r) => [r.id, r]));
+      const rows = after[t] as readonly { id: string }[];
+      const nextIds = new Set(rows.map((r) => r.id));
+      const puts = rows.filter((r) => JSON.stringify(prev.get(r.id)) !== JSON.stringify(r));
+      const deletes = [...prev.keys()].filter((id) => !nextIds.has(id));
+      if (puts.length) await db.table(t).bulkPut(puts);
+      if (deletes.length) await db.table(t).bulkDelete(deletes);
+    }
+    return exportDataset(db);
+  });
+}
+
+/**
+ * Replaces the whole vault with `data` (restore from backup) in one transaction, so a
+ * restore never mixes old and new records or duplicates ids.
+ */
+export async function replaceAll(db: ProofBridgeDB, data: Dataset): Promise<void> {
+  const parsed = assertIntact(data);
+  await db.transaction("rw", [...ENTITY_TABLES.map((t) => db.table(t)), db.meta], async () => {
+    for (const t of ENTITY_TABLES) {
+      await db.table(t).clear();
+      await db.table(t).bulkAdd(parsed[t]);
+    }
+    await db.meta.put({ key: "lastImportAt", value: new Date().toISOString() });
   });
 }

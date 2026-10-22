@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
 import { DataProvider } from "@/lib/data";
+import { ServiceWorker } from "@/components/ServiceWorker";
 
 export const metadata: Metadata = {
   title: "ProofBridge OS",
@@ -39,9 +40,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </main>
         </DataProvider>
         <footer className="mx-auto max-w-5xl px-4 pb-8 text-xs text-[var(--fg-muted)]">
-          Phase 0 skeleton. All records shown are DEMO / SYNTHETIC. Nothing here is formally verified;
-          a hash proves byte integrity, not authenticity.
+          Phase 1 slice. Records badged DEMO / SYNTHETIC are invented. Nothing here is formally
+          verified; a hash proves byte integrity, not authenticity.
         </footer>
+        <ServiceWorker />
       </body>
     </html>
   );

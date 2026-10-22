@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { countRequirementStatuses, REQUIREMENT_STATUS_LABEL, RequirementStatusSchema } from "@proofbridge/core";
 import { Card, DemoBadge, PageHeader } from "@/components/ui";
+import { ProfileLanguages } from "@/components/ProfileLanguages";
 import { WithData } from "@/components/WithData";
 import { useData } from "@/lib/data";
 import { formatDate, nextAction } from "@/lib/select";
@@ -105,6 +106,13 @@ export default function CompassPage() {
                   <p className="mt-2">Nothing captured yet.</p>
                 )}
               </Card>
+              {data.profiles[0] && (
+                <Card className="md:col-span-2">
+                  <h2 className="text-sm font-semibold tracking-wide text-[var(--fg-muted)] uppercase">Your profile</h2>
+                  <p className="mt-1 text-sm">{data.profiles[0].displayName}</p>
+                  <ProfileLanguages key={data.profiles[0].updatedAt} profile={data.profiles[0]} />
+                </Card>
+              )}
             </div>
           );
         }}

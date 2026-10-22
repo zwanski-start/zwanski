@@ -20,3 +20,8 @@ Delivered vs planned are tracked separately.
   schema, DEMO / SYNTHETIC fixture, nav skeleton rendering fixture data with no API key.
   Gate met for "boots locally, no API key, renders fixture data"; threat model and competitor
   review are still open.
+- **Phase 1 (partial, issue #4):** Evidence Vault (create/import, inspector with provenance,
+  dates, coverage, redaction, change history), deterministic requirement parser + matching
+  engine with human oversight, schema v2 migration, app-shell service worker, JSON dossier
+  export, vault backup/restore, Playwright e2e of every §3 transition + reload/offline + restore.
+  Not yet: interactive 2D Proof Graph, Bridge Plan editing, Dossier/DossierItem entities.

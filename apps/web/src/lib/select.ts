@@ -29,9 +29,10 @@ export interface RequirementPath {
 
 /**
  * Projects persisted relations into evidence → claim → skill → requirement → opportunity →
- * next-step paths. Only stored links are followed; nothing is inferred.
+ * next-step paths. Only stored links are followed; nothing is inferred. Links a human rejected
+ * are left out unless `includeRejected` is set (the Opportunity Lab shows them for review).
  */
-export function requirementPaths(data: Dataset): RequirementPath[] {
+export function requirementPaths(data: Dataset, { includeRejected = false } = {}): RequirementPath[] {
   const opportunities = byId(data.opportunities);
   const skills = byId(data.skills);
   const claims = byId(data.claims);
@@ -43,7 +44,7 @@ export function requirementPaths(data: Dataset): RequirementPath[] {
     opportunity: opportunities.get(requirement.opportunityId),
     skill: requirement.skillId ? skills.get(requirement.skillId) : undefined,
     evidence: data.requirementEvidenceLinks
-      .filter((l) => l.requirementId === requirement.id)
+      .filter((l) => l.requirementId === requirement.id && (includeRejected || l.reviewState !== "rejected"))
       .flatMap((link) => {
         const claim = claims.get(link.claimId);
         if (!claim) return [];
@@ -74,3 +75,27 @@ export function nextAction(data: Dataset): BridgeTask | undefined {
 
 export const formatDate = (iso: string) =>
   new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(iso));
+
+export const BASIS_LABEL = {
+  "user-stated": "User-stated",
+  "source-present": "Source-present",
+  "issuer-verified": "Issuer-verified",
+  unverified: "Unverified / uncertain",
+} as const;
+
+/** Requirements that an artifact's claims are linked to (rejected links excluded). */
+export function coverageForArtifact(
+  data: Dataset,
+  artifactId: string,
+): { requirement: OpportunityRequirement; opportunity: Opportunity | undefined }[] {
+  const claimIds = new Set(data.claims.filter((c) => c.artifactId === artifactId).map((c) => c.id));
+  const reqIds = new Set(
+    data.requirementEvidenceLinks
+      .filter((l) => claimIds.has(l.claimId) && l.reviewState !== "rejected")
+      .map((l) => l.requirementId),
+  );
+  const opportunities = byId(data.opportunities);
+  return data.requirements
+    .filter((r) => reqIds.has(r.id))
+    .map((requirement) => ({ requirement, opportunity: opportunities.get(requirement.opportunityId) }));
+}

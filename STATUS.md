@@ -49,3 +49,35 @@ _Truth-based progress only. Do not mark unimplemented features complete._
   requirement status from links; manual evidence entry + delete in the Evidence Vault; Playwright
   smoke test for the §3 transitions (add/remove case study, reload, offline).
 - **Founder approval required:** none.
+
+## 2026-10-22 — Phase 1 vertical slice: Evidence Vault + deterministic matching (issue #4)
+- **What works:** add evidence from typed text or a local file (read + SHA-256 in the browser);
+  Evidence Vault inspector per artifact with source, capture/added/changed dates, coverage
+  (requirements it backs), visibility + redaction (none/partial/redacted), claims (remove) and an
+  append-only change history; delete artifact (cascades claims/links). Opportunity Lab: paste a
+  listing → deterministic keyword parser → requirements → deterministic matcher; each
+  requirement shows status, reason and the claims behind it; reject/restore a match, link a claim
+  by hand, or set a status decision with a note. The §3 demo states are now *computed* by the
+  matcher (fixture no longer hand-writes links). Share Studio: `proofbridge.dossier` v1 JSON
+  preview + download (private/redacted withheld), vault backup export and validated
+  replace-restore. Compass: state working languages. Schema v2 (Dexie migration v1→v2 +
+  `migrateDataset` for v1 backups). PWA manifest + app-shell-only service worker (production).
+- **Tests:** `pnpm lint` ✓, `pnpm typecheck` ✓, `pnpm test` ✓ 44 tests (core 14, fixtures 17,
+  storage 8, web 5), `pnpm build` ✓, `pnpm e2e` ✓ 3 Playwright tests on the production build
+  (every §3 transition through the UI; manual artifact survives reload and offline; backup →
+  fresh-context restore with unique ids). Details: `docs/TEST_REPORT.md`.
+- **What does not work / limits:** Proof Graph is still the accessible list view (no 2D graph);
+  Bridge Plan tasks are not editable and not generated for new gaps; no `Dossier`/`DossierItem`
+  entities (dossier derived on demand); parser is keyword-based and only knows the vault's
+  skills (unknown skills become "other"/Unknown); a "case study" is any `write-up` artifact;
+  claim text cannot be edited (remove + re-add); no FR/AR; no PDF; e2e covers Chromium only.
+  Locally `playwright install` could not finish downloading, so e2e ran against the system
+  Chromium 154 via `PW_CHROMIUM_PATH`; CI installs Playwright's own Chromium.
+- **Security notes:** all input (listing text, files, backups) is bounded and treated as data —
+  React-escaped rendering, no eval/HTML injection, backups JSON-parsed + schema/integrity
+  validated before a single-transaction replace. Service worker caches only shell HTML and
+  hashed static assets, never vault data. No network calls at runtime (asserted in e2e). Still no
+  CSP headers; `SECURITY.md` threat model still a placeholder.
+- **Next concrete step:** interactive Proof Graph from `requirementPaths`; Bridge Plan editing and
+  gap-driven task suggestions; CSP headers + threat model; then Phase 2 extension.
+- **Founder approval required:** none.
