@@ -27,7 +27,7 @@ jobs:
       - run: pnpm build
       - name: Install Playwright Chromium
         run: pnpm --filter @proofbridge/web exec playwright install --with-deps chromium
-      - name: E2E smoke (§3 hero workflow, reload, offline, backup restore)
+      - name: E2E smoke (§3 hero workflow, reload, offline, backup restore, consent/egress, i18n, PDF)
         run: pnpm --filter @proofbridge/web e2e
       - name: E2E extension (no passive capture, hostile pages, capture → import)
         run: pnpm --filter @proofbridge/extension e2e

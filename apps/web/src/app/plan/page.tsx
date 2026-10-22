@@ -2,13 +2,15 @@
 
 import { Card, PageHeader, StatusBadge } from "@/components/ui";
 import { WithData } from "@/components/WithData";
+import { useI18n } from "@/lib/i18n";
 
 export default function PlanPage() {
+  const { t } = useI18n();
   return (
     <>
       <PageHeader
-        title="Bridge Plan"
-        lede="Small proposed tasks, each tied to one evidence gap. Effort estimates are editable guesses, not success probabilities. Time budgets and task completion are not built yet."
+        title={t("plan.title")}
+        lede={t("plan.lede")}
       />
       <WithData>
         {(data) => {

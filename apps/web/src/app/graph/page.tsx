@@ -2,14 +2,16 @@
 
 import { Card, PageHeader, StatusBadge } from "@/components/ui";
 import { WithData } from "@/components/WithData";
+import { useI18n } from "@/lib/i18n";
 import { requirementPaths } from "@/lib/select";
 
 export default function GraphPage() {
+  const { t } = useI18n();
   return (
     <>
       <PageHeader
-        title="Proof Graph"
-        lede="The accessible list view of every persisted path from evidence to next step, recomputed from the vault after every change. The interactive 2D graph will be drawn from these same relations."
+        title={t("graph.title")}
+        lede={t("graph.lede")}
       />
       <WithData>
         {(data) => (

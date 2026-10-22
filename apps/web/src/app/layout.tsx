@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { Nav } from "@/components/Nav";
+import { Footer, LanguageSelect, LocalOnlyBadge, SkipLink } from "@/components/Shell";
 import { DataProvider } from "@/lib/data";
+import { DocumentLocale, LOCALE_BOOT_SCRIPT } from "@/lib/i18n";
 import { ServiceWorker } from "@/components/ServiceWorker";
 
 export const metadata: Metadata = {
@@ -12,24 +14,20 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    // lang/dir are set before paint from the saved language (see LOCALE_BOOT_SCRIPT).
+    <html lang="en" dir="ltr" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: LOCALE_BOOT_SCRIPT }} />
+      </head>
       <body className="min-h-screen antialiased">
-        <a
-          href="#main"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:rounded focus:bg-[var(--surface)] focus:px-3 focus:py-2"
-        >
-          Skip to content
-        </a>
+        <DocumentLocale />
+        <SkipLink />
         <header className="border-b border-[var(--border)] bg-[var(--surface)]">
           <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <span className="font-serif text-xl">ProofBridge</span>
-              <span
-                className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs text-[var(--accent)]"
-                title="All data stays in this browser's IndexedDB. No account, no network calls."
-              >
-                ● Local-only
-              </span>
+              <LocalOnlyBadge />
+              <LanguageSelect />
             </div>
             <Nav />
           </div>
@@ -39,10 +37,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             {children}
           </main>
         </DataProvider>
-        <footer className="mx-auto max-w-5xl px-4 pb-8 text-xs text-[var(--fg-muted)]">
-          Phase 1 slice. Records badged DEMO / SYNTHETIC are invented. Nothing here is formally
-          verified; a hash proves byte integrity, not authenticity.
-        </footer>
+        <Footer />
         <ServiceWorker />
       </body>
     </html>

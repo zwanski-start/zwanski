@@ -5,15 +5,17 @@ import { AddEvidenceForm } from "@/components/AddEvidenceForm";
 import { ArtifactInspector } from "@/components/ArtifactInspector";
 import { Card, DemoBadge, PageHeader } from "@/components/ui";
 import { WithData } from "@/components/WithData";
-import { claimsForArtifact, formatDate } from "@/lib/select";
+import { useI18n } from "@/lib/i18n";
+import { claimsForArtifact } from "@/lib/select";
 
 export default function EvidencePage() {
   const [selected, setSelected] = useState<string | null>(null);
+  const { t, formatDate } = useI18n();
   return (
     <>
       <PageHeader
-        title="Evidence Vault"
-        lede="Sources, the artifacts captured from them and the claims each artifact supports. Select an artifact to inspect its provenance, coverage, redaction and change history."
+        title={t("evidence.title")}
+        lede={t("evidence.lede")}
       />
       <WithData>
         {(data) => {
@@ -41,7 +43,7 @@ export default function EvidencePage() {
                           type="button"
                           aria-pressed={active}
                           onClick={() => setSelected(art.id)}
-                          className={`w-full rounded-lg border p-3 text-left ${
+                          className={`w-full rounded-lg border p-3 text-start ${
                             active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface)]"
                           }`}
                         >
