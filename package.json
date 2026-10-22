@@ -1,7 +1,7 @@
 {
   "name": "proofbridge",
   "private": true,
-  "description": "ProofBridge OS — local-first evidence → opportunity pipeline (monorepo root)",
+  "description": "ProofBridge OS \u2014 local-first evidence \u2192 opportunity pipeline (monorepo root)",
   "packageManager": "pnpm@12.11.2",
   "engines": {
     "node": ">=20.9.0"
@@ -11,7 +11,8 @@
     "build": "pnpm -r --if-present build",
     "lint": "eslint .",
     "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm -r --if-present test"
+    "test": "pnpm -r --if-present test",
+    "e2e": "pnpm --filter @proofbridge/web e2e"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

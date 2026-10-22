@@ -244,8 +244,11 @@ export function addOpportunity(data: Dataset, input: NewOpportunityInput, ctx: O
     remote: "unknown",
     rawText: input.rawText,
   };
-  const requirements: OpportunityRequirement[] = parsed.map((p) => ({
-    id: ctx.newId("req"),
+  // Ids derive from the opportunity's id plus a zero-padded position, so storage order (by id)
+  // is listing order and ids stay globally unique.
+  const oppSlug = opportunity.id.replace(/^[a-z]+_/, "");
+  const requirements: OpportunityRequirement[] = parsed.map((p, i) => ({
+    id: `req_${oppSlug}-${String(i + 1).padStart(2, "0")}`,
     ...stamp,
     opportunityId: opportunity.id,
     ...p,

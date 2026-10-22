@@ -9,7 +9,7 @@ export default function GraphPage() {
     <>
       <PageHeader
         title="Proof Graph"
-        lede="The accessible list view of every persisted path from evidence to next step. The interactive 2D graph is built on these same relations in Phase 1."
+        lede="The accessible list view of every persisted path from evidence to next step, recomputed from the vault after every change. The interactive 2D graph will be drawn from these same relations."
       />
       <WithData>
         {(data) => (

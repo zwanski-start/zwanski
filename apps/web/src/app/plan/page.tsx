@@ -8,7 +8,7 @@ export default function PlanPage() {
     <>
       <PageHeader
         title="Bridge Plan"
-        lede="Small proposed tasks, each tied to one evidence gap. Effort estimates are editable guesses, not success probabilities. Time budgets and completion arrive in Phase 1."
+        lede="Small proposed tasks, each tied to one evidence gap. Effort estimates are editable guesses, not success probabilities. Time budgets and task completion are not built yet."
       />
       <WithData>
         {(data) => {

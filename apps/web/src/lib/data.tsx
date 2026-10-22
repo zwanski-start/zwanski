@@ -1,9 +1,17 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import type { Dataset } from "@proofbridge/core";
+import { randomId, type Dataset, type OpContext } from "@proofbridge/core";
 import { demoDataset } from "@proofbridge/fixtures";
-import { clearAll, exportDataset, openDatabase, seedIfEmpty, type ProofBridgeDB } from "@proofbridge/storage";
+import {
+  applyChange,
+  clearAll,
+  exportDataset,
+  openDatabase,
+  replaceAll,
+  seedIfEmpty,
+  type ProofBridgeDB,
+} from "@proofbridge/storage";
 
 export type DataState =
   | { status: "loading" }
@@ -14,7 +22,16 @@ interface DataContextValue {
   state: DataState;
   /** Wipes local data and restores the synthetic demo. */
   resetDemo: () => Promise<void>;
+  /**
+   * Runs a pure vault operation (from `@proofbridge/core`) in one IndexedDB transaction and
+   * re-renders from what was persisted. Throws (and changes nothing) if the op fails.
+   */
+  apply: (op: (data: Dataset, ctx: OpContext) => Dataset) => Promise<Dataset>;
+  /** Replaces the whole vault with a validated backup. */
+  restore: (data: Dataset) => Promise<void>;
 }
+
+const makeContext = (): OpContext => ({ now: new Date().toISOString(), newId: randomId });
 
 const DataContext = createContext<DataContextValue | null>(null);
 
@@ -60,7 +77,23 @@ export function DataProvider({ children, dbName }: { children: ReactNode; dbName
     }
   }, [load]);
 
-  return <DataContext.Provider value={{ state, resetDemo }}>{children}</DataContext.Provider>;
+  const apply = useCallback(async (op: (data: Dataset, ctx: OpContext) => Dataset) => {
+    const db = dbRef.current;
+    if (!db) throw new Error("The local vault is not open yet.");
+    const ctx = makeContext();
+    const data = await applyChange(db, (d) => op(d, ctx));
+    setState({ status: "ready", data, seeded: false });
+    return data;
+  }, []);
+
+  const restore = useCallback(async (backup: Dataset) => {
+    const db = dbRef.current;
+    if (!db) throw new Error("The local vault is not open yet.");
+    await replaceAll(db, backup);
+    setState({ status: "ready", data: await exportDataset(db), seeded: false });
+  }, []);
+
+  return <DataContext.Provider value={{ state, resetDemo, apply, restore }}>{children}</DataContext.Provider>;
 }
 
 export function useData(): DataContextValue {

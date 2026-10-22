@@ -11,7 +11,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/opportunities", label: "Opportunity Lab", description: "Requirements and their evidence status" },
   { href: "/graph", label: "Proof Graph", description: "Evidence → claim → skill → requirement → opportunity → next step" },
   { href: "/plan", label: "Bridge Plan", description: "Small tasks that close evidence gaps" },
-  { href: "/share", label: "Share Studio", description: "Selective dossier export (Phase 1)" },
+  { href: "/share", label: "Share Studio", description: "Selective dossier export and vault backup" },
 ];
 
 export function isActive(pathname: string, href: string): boolean {
