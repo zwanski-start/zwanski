@@ -16,6 +16,17 @@ export const DOSSIER_NOTICE =
 
 const EXCERPT_CHARS = 280;
 
+/** Only absolute http(s) URLs are shared as links; local paths and other schemes are dropped. */
+export function webUri(uri: string | undefined): string | null {
+  if (!uri) return null;
+  try {
+    const u = new URL(uri);
+    return u.protocol === "http:" || u.protocol === "https:" ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 export interface DossierEvidence {
   claim: string;
   basis: string;
@@ -26,6 +37,8 @@ export interface DossierEvidence {
     kind: EvidenceArtifact["kind"];
     capturedAt: string | null;
     source: string | null;
+    /** The source's web address, only when it is an http(s) URL. */
+    sourceUri: string | null;
     sha256: string | null;
     excerpt: string | null;
   };
@@ -36,6 +49,8 @@ export interface DossierRequirement {
   status: RequirementStatus;
   rationale: string;
   setManually: boolean;
+  /** The requirement line was proposed by the optional AI provider and accepted by the user. */
+  suggestedByAi: boolean;
   evidence: DossierEvidence[];
 }
 
@@ -50,6 +65,7 @@ export interface Dossier {
     organization: string;
     kind: string;
     source: string;
+    sourceUri: string | null;
     retrievedAt: string;
   };
   counts: Record<RequirementStatus, number>;
@@ -91,6 +107,7 @@ export function buildDossier(data: Dataset, opportunityId: string, generatedAt: 
           kind: art.kind,
           capturedAt: source?.capturedAt ?? null,
           source: source?.label ?? null,
+          sourceUri: webUri(source?.uri),
           sha256: art.sha256 ?? null,
           excerpt:
             art.redaction === "none" && art.content
@@ -104,6 +121,7 @@ export function buildDossier(data: Dataset, opportunityId: string, generatedAt: 
       status: req.status,
       rationale: req.rationale,
       setManually: req.override !== undefined,
+      suggestedByAi: req.origin === "ai-suggestion",
       evidence,
     };
   });
@@ -119,6 +137,7 @@ export function buildDossier(data: Dataset, opportunityId: string, generatedAt: 
       organization: opp.organization,
       kind: opp.kind,
       source: opp.sourceLabel,
+      sourceUri: webUri(opp.sourceUri),
       retrievedAt: opp.retrievedAt,
     },
     counts: countRequirementStatuses(reqs),

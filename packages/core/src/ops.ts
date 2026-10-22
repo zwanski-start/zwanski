@@ -1,5 +1,5 @@
 import { rematch } from "./matching";
-import { parseRequirements } from "./parser";
+import { MAX_REQUIREMENTS, classifyRequirement, parseRequirements, type ParsedRequirement } from "./parser";
 import type {
   AuditEvent,
   ClaimSkillLink,
@@ -236,6 +236,11 @@ export interface NewOpportunityInput {
   kind: Opportunity["kind"];
   sourceLabel?: string;
   rawText: string;
+  /**
+   * Extra requirement lines proposed by the optional AI provider and accepted by the user.
+   * They are re-classified here by the same deterministic rules and marked `ai-suggestion`.
+   */
+  acceptedSuggestions?: string[];
 }
 
 /** Saves a pasted listing and its deterministically parsed requirements, then matches them. */
@@ -245,7 +250,16 @@ export function addOpportunity(data: Dataset, input: NewOpportunityInput, ctx: O
 } {
   const title = input.title.trim();
   if (!title) throw new Error("The opportunity needs a title.");
-  const parsed = parseRequirements(input.rawText, data.skills);
+  const parsed: (ParsedRequirement & { origin?: "ai-suggestion" })[] = parseRequirements(input.rawText, data.skills);
+  const seen = new Set(parsed.map((p) => p.text.toLowerCase()));
+  for (const line of input.acceptedSuggestions ?? []) {
+    const text = line.trim().slice(0, 300);
+    if (!text) continue;
+    const p = classifyRequirement(text, data.skills);
+    if (seen.has(p.text.toLowerCase()) || parsed.length >= MAX_REQUIREMENTS) continue;
+    seen.add(p.text.toLowerCase());
+    parsed.push({ ...p, origin: "ai-suggestion" });
+  }
   if (parsed.length === 0) throw new Error("No requirements found in the listing text.");
   const stamp = { demo: false, createdAt: ctx.now, updatedAt: ctx.now };
   const opportunity: Opportunity = {

@@ -163,6 +163,12 @@ export const OpportunityRequirementSchema = z.object({
   rationale: z.string().default(""),
   /** A human decision that wins over the matcher until cleared. */
   override: RequirementOverrideSchema.optional(),
+  /**
+   * Who proposed this requirement line. Absent = the deterministic parser. "ai-suggestion" means
+   * an optional AI provider proposed it and the user accepted it; its status is still decided by
+   * the deterministic matcher. Optional, so schema v2 data stays valid without a migration.
+   */
+  origin: AttributionSchema.optional(),
 });
 export type OpportunityRequirement = z.infer<typeof OpportunityRequirementSchema>;
 
