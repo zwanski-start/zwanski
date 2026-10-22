@@ -31,6 +31,14 @@ jobs:
         run: pnpm --filter @proofbridge/web e2e
       - name: E2E extension (no passive capture, hostile pages, capture → import)
         run: pnpm --filter @proofbridge/extension e2e
+      - name: Release artifacts (static web export, extension zip, share-server bundle, SHA256SUMS) — built, not deployed
+        run: pnpm release
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: proofbridge-release
+          path: dist/release
+          retention-days: 14
       - name: Upload loadable extension build (unpacked, production manifest)
         uses: actions/upload-artifact@v4
         with:

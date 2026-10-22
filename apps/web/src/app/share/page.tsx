@@ -5,12 +5,15 @@ import {
   MAX_BACKUP_BYTES,
   RequirementStatusSchema,
   buildDossier,
+  isEncryptedBackup,
   parseBackup,
   renderDossierPdf,
   serializeBackup,
   type Dataset,
 } from "@proofbridge/core";
 import { Button, Card, DemoBadge, ErrorText, PageHeader, StatusBadge, inputClass, labelClass } from "@/components/ui";
+import { EncryptedBackupPanel } from "@/components/EncryptedBackupPanel";
+import { OnlineSharePanel } from "@/components/OnlineSharePanel";
 import { WithData } from "@/components/WithData";
 import { useData } from "@/lib/data";
 import { downloadBytes, downloadText } from "@/lib/files";
@@ -124,7 +127,9 @@ function BackupPanel({ data }: { data: Dataset }) {
     if (!file) return;
     await run(async () => {
       if (file.size > MAX_BACKUP_BYTES) throw new Error("Backup file is too large.");
-      setPending(parseBackup(await file.text()));
+      const text = await file.text();
+      if (isEncryptedBackup(text)) throw new Error("This backup is encrypted — use “Restore encrypted backup” below.");
+      setPending(parseBackup(text));
     });
   }
 
@@ -199,6 +204,16 @@ export default function SharePage() {
             <Card>
               <h2 className="mb-3 text-sm font-semibold tracking-wide text-[var(--fg-muted)] uppercase">{t("share.backup")}</h2>
               <BackupPanel data={data} />
+            </Card>
+            <Card>
+              <h2 className="mb-3 text-sm font-semibold tracking-wide text-[var(--fg-muted)] uppercase">Encrypted backup</h2>
+              <EncryptedBackupPanel data={data} />
+            </Card>
+            <Card>
+              <h2 className="mb-3 text-sm font-semibold tracking-wide text-[var(--fg-muted)] uppercase">
+                Online share link (optional)
+              </h2>
+              <OnlineSharePanel data={data} />
             </Card>
           </div>
         )}

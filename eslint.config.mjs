@@ -6,7 +6,7 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["**/node_modules/**", "**/.next/**", "**/out/**", "**/dist/**", "**/coverage/**", "**/next-env.d.ts", "**/playwright-report/**", "**/test-results/**", "**/.output/**", "**/.wxt/**"],
+    ignores: ["**/node_modules/**", "**/.next/**", "**/.next-export/**", "**/out/**", "**/dist/**", "**/coverage/**", "**/next-env.d.ts", "**/playwright-report/**", "**/test-results/**", "**/.output/**", "**/.wxt/**"],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

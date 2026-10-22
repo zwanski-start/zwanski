@@ -22,6 +22,9 @@ packages/ai         OPTIONAL, consent-gated AI suggestions: device-local setting
                     (settings.ts), the single egress boundary `guardedFetch` (egress.ts) and
                     Ollama requirement-extraction suggestions that degrade to the
                     deterministic parser (suggest.ts). Pure; fetch/clock are injected.
+apps/share-server   OPTIONAL share service (Node ≥ 22.18, zero runtime deps): Fetch-API handler
+                    (handler.ts), JSON-file store with expiry/revocation (store.ts), Node http
+                    adapter (node.ts), public read-only viewer page (viewer.ts).
 packages/storage    Dexie 4 IndexedDB database: versioned schema list (MIGRATIONS),
                     import/export/seed/clear, applyChange (atomic diff commit of a pure op),
                     replaceAll (restore). Validates with core schemas on every read/write.
@@ -31,6 +34,8 @@ packages/config     Shared tsconfig base.
 
 Dependency direction: `web → storage → core`, `web → fixtures → core`, `web → ai → core`,
 `extension → core`. `core` has no runtime dependency other than Zod and never touches I/O.
+`share-server` has no runtime dependency on any package (core only in its tests); it shares
+only the wire format (`SHARE_AAD`, base64url, AES-GCM) with `core/crypto.ts`.
 
 Planned per directive §4 (not created yet): `packages/{evidence,graph,ui}`.
 
@@ -135,9 +140,29 @@ Protocol: `packages/core/src/capture.ts`. Threat model: `SECURITY.md` § Capture
 - **Vault backup**: the schema-versioned `Dataset` JSON. Restore = size check → JSON.parse →
   migrate → schema + unique ids + no dangling refs → replace the vault in one transaction.
 
-No network request is made by the app at runtime unless the user opts in to AI suggestions and
-then explicitly sends a previewed request to a model on their own machine. There is no backend,
-no auth, no sync.
+- **Encrypted vault backup** (`proofbridge.encrypted-backup` v1): `{format, version, kdf{PBKDF2,
+  SHA-256, iterations, salt}, cipher{AES-GCM, iv}, createdAt, ciphertext}`; the plaintext is the
+  vault backup above; the header is GCM additional data. `core/crypto.ts`.
+- **Release artifacts** (`pnpm release`): static web export (`PROOFBRIDGE_STATIC_EXPORT=1` →
+  `apps/web/.next-export`, with `_headers`), extension zip, share-server source tarball, `SHA256SUMS`.
+
+No network request is made by the app at runtime unless the user opts in to (a) AI suggestions
+and then explicitly sends a previewed request to a model on their own machine, or (b) online
+share links, and then creates/refreshes/revokes a link on the share service address they entered.
+There is no account system and no sync.
+
+## Optional share links (Phase 4)
+
+```
+Share Studio ──(encrypt dossier, random key K)──► POST /api/shares {iv, ciphertext, ttl}  [Bearer owner key]
+     │                                              share-server stores ciphertext + SHA-256(owner key)
+     └─ link = <service>/s/<id>#k=K ──► reader's browser ── GET /s/<id> (viewer) ── GET /api/shares/<id>
+                                                         decrypts with K locally; 410 when expired/revoked
+```
+
+Boundaries: the user's browser (app origin), the share service process (its own origin), the
+reader's browser. The service is outside the user's machine only if someone deploys it
+(`docs/DEPLOYMENT.md`). Threat model: `SECURITY.md` § Share links.
 
 ## Domain model
 

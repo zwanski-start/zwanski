@@ -104,6 +104,31 @@ the production web app — run `pnpm build` first; honours `PW_CHROMIUM_PATH` an
 
 Next.js telemetry is disabled by the app's scripts (`apps/web/scripts/next.mjs`).
 
+## 8. Encrypted backups and share links (optional)
+
+- **Share Studio → Encrypted backup**: choose a passphrase (≥ 12 characters) → *Export encrypted
+  backup*. Restore it with the same passphrase under *Restore encrypted backup*. A lost passphrase
+  cannot be recovered.
+- **Online share links** are off by default. To try them locally (Node ≥ 22.18):
+
+  ```sh
+  ALLOWED_ORIGINS=http://localhost:3000 pnpm share-server   # http://127.0.0.1:8787
+  ```
+
+  Share Studio → *Online share link* → *Set up…* → address `http://localhost:8787` → consent →
+  *Enable* → pick an expiry → *Create encrypted link*. Open the link in another browser; *Revoke*
+  makes it stop working. Copies a reader saved cannot be revoked.
+
+## 9. Release artifacts
+
+```sh
+pnpm release          # after lint/typecheck/test/build/e2e — see docs/RELEASE_CHECKLIST.md
+pnpm preview:static   # serve the static export on http://localhost:4173 like a static host
+```
+
+Artifacts land in `dist/release/<version>-<commit>/` with `SHA256SUMS`. Nothing is deployed;
+see `docs/DEPLOYMENT.md`.
+
 ## Troubleshooting
 
 - **"Could not open the local database"** — the browser blocks IndexedDB (some private modes do).

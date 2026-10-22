@@ -22,3 +22,5 @@ next-env.d.ts
 *.tsbuildinfo
 .output/
 .wxt/
+.share-data/
+.next-export/

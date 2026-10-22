@@ -74,7 +74,7 @@ const en = {
 
   "share.title": "Share Studio",
   "share.lede":
-    "Compose a selectively disclosed, opportunity-specific dossier for your review and export. Private and redacted evidence is never included. Nothing leaves this browser unless you download it.",
+    "Compose a selectively disclosed, opportunity-specific dossier for your review and export. Private and redacted evidence is never included. Nothing leaves this browser unless you download it or create an online share link.",
   "share.dossier": "Dossier",
   "share.backup": "Vault backup",
   "share.opportunity": "Opportunity",
@@ -196,7 +196,7 @@ const fr: Messages = {
 
   "share.title": "Studio de partage",
   "share.lede":
-    "Composez un dossier propre à une opportunité, à divulgation sélective, pour le relire et l’exporter. Les preuves privées ou masquées ne sont jamais incluses. Rien ne quitte ce navigateur sauf si vous le téléchargez.",
+    "Composez un dossier propre à une opportunité, à divulgation sélective, pour le relire et l’exporter. Les preuves privées ou masquées ne sont jamais incluses. Rien ne quitte ce navigateur sauf si vous le téléchargez ou créez un lien de partage en ligne.",
   "share.dossier": "Dossier",
   "share.backup": "Sauvegarde du coffre",
   "share.opportunity": "Opportunité",
@@ -313,7 +313,7 @@ const ar: Messages = {
 
   "share.title": "استوديو المشاركة",
   "share.lede":
-    "أنشئ ملفًا خاصًا بفرصة بعينها مع إفصاح انتقائي لمراجعته وتصديره. لا تُضمَّن الأدلة الخاصة أو المحجوبة أبدًا. لا شيء يغادر هذا المتصفح إلا إذا نزّلته.",
+    "أنشئ ملفًا خاصًا بفرصة بعينها مع إفصاح انتقائي لمراجعته وتصديره. لا تُضمَّن الأدلة الخاصة أو المحجوبة أبدًا. لا شيء يغادر هذا المتصفح إلا إذا نزّلته أو أنشأت رابط مشاركة عبر الإنترنت.",
   "share.dossier": "الملف",
   "share.backup": "نسخة احتياطية للخزنة",
   "share.opportunity": "الفرصة",
