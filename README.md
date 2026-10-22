@@ -12,7 +12,10 @@ Generated claims are never presented as formally verified.
 
 ## Status
 
-**Phase 2 — capture extension.** Offline Evidence Vault, deterministic requirement matching,
+**Phase 4 — release readiness.** Optional encrypted share links with server-enforced expiry
+and revocation (`apps/share-server`), passphrase-encrypted backups, automated accessibility and
+performance checks, and `pnpm release` artifacts (`docs/RELEASE_CHECKLIST.md`). No sync, nothing
+deployed. Earlier: **Phase 2 — capture extension.** Offline Evidence Vault, deterministic requirement matching,
 dossier export and backup (Phase 1), plus a least-privilege Chromium MV3 extension
 (`apps/extension`) that captures a listing or selected text only on click, after preview and
 confirmation, into the local app's Capture Inbox. See `STATUS.md` for truth-based progress and
@@ -32,6 +35,8 @@ pnpm install
 pnpm dev          # http://localhost:3000
 pnpm lint && pnpm typecheck && pnpm test && pnpm build
 # extension: load apps/extension/.output/chrome-mv3 via chrome://extensions → "Load unpacked"
+pnpm share-server # OPTIONAL: local share service for encrypted share links (http://127.0.0.1:8787)
+pnpm release      # build artifacts into dist/release/ (nothing is deployed)
 ```
 
 Full steps from an empty machine: `QUICKSTART.md`. Layout and data flow: `ARCHITECTURE.md`.

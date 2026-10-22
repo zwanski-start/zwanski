@@ -1,8 +1,9 @@
 # SECURITY
 
-> Partial threat model. The **capture extension** section below is complete for Phase 2; the
-> rest of the app (imports, sharing, sync) is still summarised only. Do not claim audited /
-> zero-knowledge / SOC2 / production-ready until verified.
+> Threat model, refreshed for Phase 4. The **capture extension**, **encrypted backup** and
+> **share links** sections are detailed; PDF/ZIP import hardening is Phase 3's. There is no sync.
+> Do not claim audited / zero-knowledge / end-to-end encrypted / SOC2 / production-ready until
+> verified against defined criteria.
 
 Scope to model (directive §6): sensitive-document vault; hostile web/PDF/ZIP input; prompt
 injection in imported listings; least-privilege MV3 extension; no unauthenticated localhost
@@ -17,7 +18,11 @@ immigration/legal-status/precise-location data.
 - All imported input (listing text, files, backups, browser captures) is bounded, schema-validated
   and rendered as React-escaped text; nothing is executed or injected as HTML.
 - Listing text is parsed by fixed keyword rules; it is data, never instructions (no AI in the loop).
-- Still open: CSP headers, PDF/ZIP import hardening (Phase 3), sharing/revocation (Phase 4).
+- The only optional network path is the user-enabled share service (§ Share links below).
+- CSP: the static export ships a `_headers` file (CSP `default-src 'self'`, `object-src 'none'`,
+  `frame-ancestors 'none'`, `nosniff`, `no-referrer`, restrictive `Permissions-Policy`). Script
+  CSP still needs `'unsafe-inline'` (Next static export inlines bootstrap data, no nonces); the
+  `next start` server sends no CSP. Still open: PDF/ZIP import hardening (Phase 3).
 
 ## Capture extension (Phase 2)
 
@@ -106,3 +111,78 @@ Pages the user captures (job listings, excerpts), the extension's queue of confi
   click the toolbar to grant `activeTab`) and lets the popup target a tab id from its URL. Both are
   compiled out of the production build; the manifest audit fails if host permissions appear.
 - Not yet: Chrome Web Store packaging (its id would differ from the pinned unpacked id), Firefox.
+
+## Encrypted vault backup (Phase 4)
+
+`packages/core/src/crypto.ts`, Share Studio → *Encrypted backup*.
+
+- **Construction:** AES-256-GCM; key from the passphrase via PBKDF2-HMAC-SHA-256, 600 000
+  iterations, random 16-byte salt; random 12-byte IV per file. The envelope header (format,
+  version, KDF params, salt, IV, createdAt) is bound as GCM additional data, so editing any of it
+  fails authentication. WebCrypto only, no dependency, no hardcoded key; the passphrase is held in
+  component state until export and never stored.
+- **Hostile files:** size bound before parsing, strict envelope schema (unknown fields refused),
+  KDF iterations accepted only in [100 000, 5 000 000] (no weak downgrade, no CPU-exhaustion
+  file), then the full plain-backup validation (schema, unique ids, no dangling refs).
+- **What it protects:** a backup file at rest outside the browser (USB stick, cloud drive, mail)
+  against someone without the passphrase. **What it does not:** the live vault in IndexedDB
+  (unencrypted), a weak/reused passphrase (offline guessing is possible; 12-character minimum
+  only), a compromised device or browser extension reading the page while unlocked.
+- Wrong passphrase and tampered file give the same error (no oracle). Lost passphrase = lost backup.
+
+## Share links (Phase 4, optional)
+
+Components: Share Studio *Online share link* panel (`apps/web/src/lib/share.ts`), the share
+service (`apps/share-server`), and its public viewer page (`/s/<id>`).
+
+### Data flow
+
+1. Off by default. The user opens the panel, enters a share-service address (https, or http only
+   for loopback), reads what is uploaded and ticks consent. The app generates a random 256-bit
+   **owner key** (localStorage) — the only "identity"; there are no accounts.
+2. *Create encrypted link*: the app builds the same dossier as the preview (private/redacted
+   evidence already excluded), encrypts it with a **fresh random AES-256-GCM key**, and POSTs only
+   `{iv, ciphertext, ttlSeconds}` with `Authorization: Bearer <owner key>`
+   (`credentials: omit`, `no-referrer`).
+3. The service stores ciphertext, `SHA-256(owner key)`, timestamps; returns an unguessable
+   128-bit id. The link is `<service>/s/<id>#k=<key>` — the fragment is never sent in HTTP.
+4. A reader opens the link: the viewer page (hash-pinned CSP, no third-party resources) fetches
+   the ciphertext from its own origin and decrypts in the browser; rendering uses `textContent` only.
+5. Owner *Revoke* → `DELETE` → ciphertext deleted, tombstone kept; reads return `410 revoked`.
+   Expiry (5 min – 30 days, chosen at creation) → ciphertext deleted on the next sweep; reads
+   return `410 expired`.
+
+### Threats and mitigations
+
+| Threat | Mitigation | Test |
+| --- | --- | --- |
+| Share service (or its operator / a DB leak) reads dossiers | client-side encryption; key only in the fragment; server never sees it | unit + e2e: stored data and request bodies contain no plaintext or key |
+| Link guessed / enumerated | 128-bit random ids; 256-bit keys; read rate limit per client | unit (rate limit) |
+| Link outlives intent | mandatory expiry ≤ 30 days; revocation deletes ciphertext server-side | unit (clock-injected expiry, revoke, persistence across restart) + e2e |
+| Another user lists/revokes my shares (tenant isolation) | owner = hash of a 256-bit capability; list/revoke scoped to it; foreign id → same 404 as unknown | unit "tenant isolation" |
+| Cross-site page drives owner API with the user's browser | bearer key not ambient (no cookies); CORS only for configured exact app origins; disallowed `Origin` → 403 | unit "CORS" |
+| Hostile request bodies | JSON-only, 415 otherwise; strict field set; base64url only; size bounds (body and ciphertext); per-owner active cap (50); store cap | unit "hostile requests" |
+| XSS via dossier content in the viewer | `textContent` rendering, no `innerHTML`; CSP `default-src 'none'` with script/style hashes; `frame-ancestors 'none'` | unit (CSP + no `innerHTML`), e2e axe on viewer |
+| Key leaks via Referer / caches | `Referrer-Policy: no-referrer`, `Cache-Control: no-store`, `noindex` | unit headers |
+| Silent upload | nothing is sent until enabled + consent + click; e2e asserts no request before | e2e |
+| Access logging becomes tracking | only a count and read timestamps (last 50); no IP/UA/referrer stored | design (`store.ts`) |
+
+### Residual risks / limitations
+
+- **Anyone with the full link can read the share** until expiry/revocation, and can keep a copy:
+  **already downloaded/saved/printed content cannot be revoked** (stated in the app and viewer).
+- This is **not "end-to-end encryption"** of the vault and is not claimed as such: the app and
+  viewer code come from the hosts that serve them; a malicious or compromised share-service
+  operator could serve a viewer that exfiltrates the key from the fragment. Trust in the
+  share-service operator for *code integrity* remains; only *storage* confidentiality is removed.
+- The owner key sits in `localStorage` on the creating device (readable by anything running on
+  the app origin, e.g. a malicious extension). Losing it (clearing site data) means you can no
+  longer revoke — links still expire. *Turn off* is refused while links may be active.
+- Rate limits key on the TCP peer address (or first `X-Forwarded-For` hop with `TRUST_PROXY=1`);
+  they are in-memory and per process.
+- The service sees client IP addresses at the transport layer even though it stores none; a
+  reverse proxy may log them.
+- Viewer pages are publicly reachable for any well-formed id (they reveal nothing without a valid
+  id + key).
+- Not built: password-protected shares, per-reader links, access logs with reader identity,
+  Workers/KV storage adapter, sync.

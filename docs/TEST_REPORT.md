@@ -94,3 +94,64 @@ Environment: Linux, Node 26.7.0, pnpm 12.11.2, Playwright 1.64.1, Chromium 154
 - Playwright's bundled Chromium could not be downloaded locally; CI installs it and runs the
   extension suite with `channel: "chromium"` (full Chromium, new headless).
 - Chromium only; no Firefox/WebKit, no Web Store package.
+
+## 2026-10-22 — Phase 4 gate (issue #7)
+
+Environment: Linux, Node 26.7.0, pnpm 12.11.2, Playwright 1.64.1 driving system Chromium 154
+(`PW_CHROMIUM_PATH=/usr/bin/chromium`; CI uses Playwright's Chromium), @axe-core/playwright 4.x.
+
+| Command | Result |
+| --- | --- |
+| `pnpm lint` | ✓ no findings |
+| `pnpm typecheck` | ✓ 6 packages |
+| `pnpm test` | ✓ 95 passed — core 32 (+7 crypto), extension 13, fixtures 18, share-server 13 (new), storage 8, web 11 (+3 share client) |
+| `pnpm build` | ✓ web 10 routes + extension (manifest audit passed) |
+| `pnpm e2e` | ✓ web 11 (4 existing + 7 Phase 4) + extension 3 |
+| `pnpm release` | ✓ `dist/release/<version>-<sha>/`: web static tar.gz (~294 KB), extension zip (~59 KB, re-audited), share-server tar.gz (~10 KB), `SHA256SUMS`, `release.json` |
+
+### Gate checklist
+
+- **Release checklist + build artifacts** — `docs/RELEASE_CHECKLIST.md`; `pnpm release` (also in CI,
+  uploaded as `proofbridge-release`). Static export checked by hand: `pnpm preview:static` on
+  port 5290 + share service on 5297 → Share Studio created a link under the `_headers` CSP and the
+  viewer rendered the dossier; no console errors.
+- **Share links honour expiry + revocation** — `apps/share-server/src/share.test.ts` (injected
+  clock): served until `expiresAt`, `410 expired` one second later, ciphertext deleted; TTL bounds;
+  revoke → `410 revoked` immediately, idempotent, survives restart (file store); per-owner cap;
+  CORS allowlist; malformed/oversized/extra-field bodies; read rate limit; no plaintext stored;
+  viewer CSP hash-pinned; real HTTP round-trip. e2e `phase4.spec.ts` "share link": off by default
+  → enable with consent → create (request body has no title and no key) → separate browser reads
+  the dossier (axe: 0 violations) → link without key refused → owner revokes → viewer shows revoked
+  → second link expires when the server clock passes 1 h → app shows Expired → turn off.
+- **Sync tenant-isolation + conflict tests** — sync is **not built**. Owner isolation of shares is
+  tested ("an owner can neither list nor revoke another owner's shares").
+- **Encrypted backup** — core: round-trip, 600k default, fresh salt/IV, wrong passphrase,
+  tampered ciphertext and header (AAD), weak passphrase, hostile KDF cost, unknown fields, size.
+  e2e: export → plain restore points to encrypted restore → wrong passphrase refused → correct one
+  restores in a fresh context.
+- **Accessibility** — e2e: axe-core WCAG 2.0/2.1 A+AA on all 7 screens in light and dark mode,
+  0 violations (control: `color-contrast` is among the passing rules on every page, so the rule set
+  really ran); share Set-up form included. Keyboard: skip link first, all 7 nav routes reached by
+  Tab with a non-`none` outline, Enter activates. Screen-reader node inspection: every requirement
+  and every linked claim from IndexedDB appears in the `main` accessibility tree (ariaSnapshot).
+  No a11y fixes were needed in this pass.
+- **Performance** (production build, SW blocked, localhost; measured):
+
+  | Route | DCL ms | vault rendered ms | JS gzip KB | JS raw KB |
+  | --- | --- | --- | --- | --- |
+  | `/` | 27 | 182 | 234 | 769 |
+  | `/evidence` | 32 | 94 | 234 | 769 |
+  | `/opportunities` | 21 | 106 | 234 | 769 |
+  | `/graph` | 22 | 79 | 234 | 769 |
+  | `/plan` | 19 | 65 | 234 | 769 |
+  | `/inbox` | 21 | 78 | 227 | 745 |
+  | `/share` | 21 | 83 | 234 | 769 |
+
+  Budgets asserted: DCL < 1.5 s, rendered < 3 s, JS < 300 KB gzip / < 1 000 KB raw. Localhost
+  numbers say nothing about slow networks/devices; no throttled or Lighthouse run was done.
+
+### Known limitations
+
+- No sync; no live deployment; share service Workers/KV adapter not written.
+- Static-export CSP needs `script-src 'unsafe-inline'`; `next start` sends no CSP.
+- e2e ran on system Chromium only.

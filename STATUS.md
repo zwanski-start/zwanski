@@ -118,3 +118,37 @@ _Truth-based progress only. Do not mark unimplemented features complete._
 - **Next concrete step:** interactive Proof Graph, Bridge Plan editing, CSP headers; Phase 3
   provider-optional intelligence + localization.
 - **Founder approval required:** none (Web Store publishing would need an account — not done).
+
+## 2026-10-22 — Phase 4: release readiness + optional encrypted share (issue #7)
+- **What works:** Share Studio **Encrypted backup** (AES-256-GCM, PBKDF2-SHA-256 600k, header as
+  AAD; wrong passphrase/tampering refused). Opt-in **Online share link**: the dossier is encrypted
+  in the browser with a fresh key carried only in the link `#fragment`; a self-hostable share
+  service (`apps/share-server`, `pnpm share-server`, zero runtime deps) stores ciphertext only,
+  enforces expiry (5 min – 30 days) and revocation by deleting the ciphertext (`410`), scopes
+  list/revoke to an owner-key hash (no accounts), answers CORS only for configured app origins,
+  rate-limits, and serves a CSP-locked read-only viewer. The app shows status, open counts and
+  revoke; sharing is off until the user enables it with consent. `pnpm release` builds a static
+  Pages-compatible export (with `_headers` security headers), the extension zip (manifest
+  re-audited) and the share-server bundle with `SHA256SUMS`; CI uploads them. Docs:
+  `docs/RELEASE_CHECKLIST.md`, `docs/RUNBOOK.md`, `docs/DEPLOYMENT.md`, refreshed `SECURITY.md`.
+- **Tests:** `pnpm lint` ✓, `pnpm typecheck` ✓ (6 packages), `pnpm test` ✓ 95 (core 32,
+  extension 13, fixtures 18, share-server 13, storage 8, web 11), `pnpm build` ✓, `pnpm e2e` ✓ web
+  11 + extension 3 (new: share expiry/revocation end to end, encrypted restore, axe WCAG 2.1 A/AA
+  light + dark on all screens with 0 violations, keyboard, accessibility-tree graph inspection,
+  perf budgets), `pnpm release` ✓. Details: `docs/TEST_REPORT.md`.
+- **What does not work / known limitations:** **no sync** (needs a provider account + approval;
+  tenant-isolation/conflict tests for sync therefore do not exist); **nothing deployed**; share
+  service has a JSON-file store only (no Workers/KV adapter); anyone with a full link can read
+  that share and saved copies cannot be revoked; this is **not** end-to-end encryption (the viewer
+  code is served by the share service; the local vault in IndexedDB is unencrypted); owner key in
+  `localStorage` — clearing site data loses the ability to revoke (links still expire); static
+  CSP needs `'unsafe-inline'` scripts and `next start` sends no CSP; a hosted origin cannot use
+  the extension's direct handoff (file fallback only); perf measured on localhost only; Chromium
+  only; Share Studio panels are English-only.
+- **Security notes:** see `SECURITY.md` § Encrypted vault backup, § Share links. No new
+  permission in the extension; the app's only network path is the user-configured share service.
+- **Next concrete step:** founder decision on hosting (Pages project on a new domain + where to
+  run the share service); then a KV/D1 store adapter for the share service if Workers is chosen;
+  sync design (conflict semantics, RLS, key ownership) only after a provider is approved.
+- **Founder approval required:** any live deployment (Pages, public share service, DNS), Chrome
+  Web Store publishing, any sync provider account.

@@ -17,6 +17,9 @@ packages/core       Zod schemas + inferred types for the domain model; integrity
                     backup parse/serialize + dataset migration (backup.ts, migrate.ts);
                     capture protocol shared with the extension (capture.ts: schemas, text/URL
                     sanitisers, local-origin allowlist, pinned EXTENSION_ID).
+apps/share-server   OPTIONAL share service (Node ≥ 22.18, zero runtime deps): Fetch-API handler
+                    (handler.ts), JSON-file store with expiry/revocation (store.ts), Node http
+                    adapter (node.ts), public read-only viewer page (viewer.ts).
 packages/storage    Dexie 4 IndexedDB database: versioned schema list (MIGRATIONS),
                     import/export/seed/clear, applyChange (atomic diff commit of a pure op),
                     replaceAll (restore). Validates with core schemas on every read/write.
@@ -25,6 +28,8 @@ packages/config     Shared tsconfig base.
 ```
 
 Dependency direction: `web → storage → core`, `web → fixtures → core`, `extension → core`.
+`share-server` has no runtime dependency on any package (core only in its tests); it shares
+only the wire format (`SHARE_AAD`, base64url, AES-GCM) with `core/crypto.ts`.
 `core` has no runtime dependency other than Zod and never touches I/O.
 
 Planned per directive §4 (not created yet): `packages/{evidence,graph,ai,ui}`.
@@ -96,7 +101,28 @@ Protocol: `packages/core/src/capture.ts`. Threat model: `SECURITY.md` § Capture
 - **Vault backup**: the schema-versioned `Dataset` JSON. Restore = size check → JSON.parse →
   migrate → schema + unique ids + no dangling refs → replace the vault in one transaction.
 
-No network request is made by the app at runtime. There is no backend, no auth, no sync.
+- **Encrypted vault backup** (`proofbridge.encrypted-backup` v1): `{format, version, kdf{PBKDF2,
+  SHA-256, iterations, salt}, cipher{AES-GCM, iv}, createdAt, ciphertext}`; the plaintext is the
+  vault backup above; the header is GCM additional data. `core/crypto.ts`.
+- **Release artifacts** (`pnpm release`): static web export (`PROOFBRIDGE_STATIC_EXPORT=1` →
+  `apps/web/.next-export`, with `_headers`), extension zip, share-server source tarball, `SHA256SUMS`.
+
+No network request is made by the app at runtime **unless the user enables online share links**;
+then it talks only to the share service address they entered, only on create/refresh/revoke.
+There is no account system and no sync.
+
+## Optional share links (Phase 4)
+
+```
+Share Studio ──(encrypt dossier, random key K)──► POST /api/shares {iv, ciphertext, ttl}  [Bearer owner key]
+     │                                              share-server stores ciphertext + SHA-256(owner key)
+     └─ link = <service>/s/<id>#k=K ──► reader's browser ── GET /s/<id> (viewer) ── GET /api/shares/<id>
+                                                         decrypts with K locally; 410 when expired/revoked
+```
+
+Boundaries: the user's browser (app origin), the share service process (its own origin), the
+reader's browser. The service is outside the user's machine only if someone deploys it
+(`docs/DEPLOYMENT.md`). Threat model: `SECURITY.md` § Share links.
 
 ## Domain model
 
