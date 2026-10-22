@@ -16,7 +16,10 @@ export function serializeBackup(data: Dataset): string {
  * relation dangles — so a restore can never create duplicate ids or broken links.
  */
 export function parseBackup(text: string): Dataset {
-  if (text.length > MAX_BACKUP_BYTES) throw new Error("Backup file is too large.");
+  // A UTF-16 code unit is at least one UTF-8 byte, so the cheap length check rejects huge input first.
+  if (text.length > MAX_BACKUP_BYTES || new TextEncoder().encode(text).byteLength > MAX_BACKUP_BYTES) {
+    throw new Error("Backup file is too large.");
+  }
   let raw: unknown;
   try {
     raw = JSON.parse(text);

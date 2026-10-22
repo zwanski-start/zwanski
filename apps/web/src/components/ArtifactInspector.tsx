@@ -99,7 +99,9 @@ export function ArtifactInspector({ data, artifact, onDeleted }: { data: Dataset
             ))}
           </select>
         </div>
-        <p className="text-xs text-[var(--fg-muted)] sm:col-span-2">{REDACTION_HELP[artifact.redaction]}</p>
+        <p className="text-xs text-[var(--fg-muted)] sm:col-span-2">
+          {REDACTION_HELP[artifact.redaction]} Visibility applies to this evidence’s claims and links too.
+        </p>
       </div>
 
       {artifact.content !== undefined && (

@@ -210,7 +210,23 @@ export function updateArtifact(data: Dataset, artifactId: string, patch: Artifac
   const describe = changed
     .map((k) => (k === "visibility" || k === "redaction" ? `${k}: ${artifact[k]} → ${updated[k]}` : k))
     .join(", ");
-  const next: Dataset = { ...data, artifacts: data.artifacts.map((a) => (a.id === artifactId ? updated : a)) };
+  let next: Dataset = { ...data, artifacts: data.artifacts.map((a) => (a.id === artifactId ? updated : a)) };
+  const visibility = patch.visibility;
+  if (visibility !== undefined && visibility !== artifact.visibility) {
+    // Claims (and the links that cite them) inherit the artifact's visibility, so the dossier
+    // and graph honour the inspector's single Visibility control. Auto links follow via rematch.
+    const claimIds = new Set(data.claims.filter((c) => c.artifactId === artifactId).map((c) => c.id));
+    const restamp = <T extends { visibility: EvidenceArtifact["visibility"]; updatedAt: string }>(
+      row: T,
+      owned: boolean,
+    ): T => (owned && row.visibility !== visibility ? { ...row, visibility, updatedAt: ctx.now } : row);
+    next = {
+      ...next,
+      claims: next.claims.map((c) => restamp(c, claimIds.has(c.id))),
+      claimSkillLinks: next.claimSkillLinks.map((l) => restamp(l, claimIds.has(l.claimId))),
+      requirementEvidenceLinks: next.requirementEvidenceLinks.map((l) => restamp(l, claimIds.has(l.claimId))),
+    };
+  }
   return rematch(withAudit(next, audit(ctx, "artifacts", artifactId, "update", `Changed ${describe}`)), ctx.now);
 }
 

@@ -192,3 +192,24 @@ test("backup export → fresh install restore keeps relations and ids unique", a
   expect(restoredIds.sort()).toEqual(originalIds);
   await fresh.close();
 });
+
+test("changing an artifact's visibility in the inspector moves it into and out of the dossier", async ({ page }) => {
+  await addEvidence(page, { ...CASE_STUDY_2, visibility: "private" });
+  await page.goto("/share");
+  await expect(page.getByRole("region", { name: "Dossier preview" })).not.toContainText(CASE_STUDY_2.title);
+
+  await page.goto("/evidence");
+  await page.getByRole("button", { name: new RegExp(CASE_STUDY_2.title) }).click();
+  const inspector = page.getByRole("region", { name: `Inspector: ${CASE_STUDY_2.title}` });
+  await inspector.getByLabel("Visibility").selectOption("public");
+  await expect(inspector).toContainText("· public");
+  await page.goto("/share");
+  await expect(page.getByRole("region", { name: "Dossier preview" })).toContainText(CASE_STUDY_2.title);
+
+  await page.goto("/evidence");
+  await page.getByRole("button", { name: new RegExp(CASE_STUDY_2.title) }).click();
+  await inspector.getByLabel("Visibility").selectOption("private");
+  await expect(inspector).toContainText("· private");
+  await page.goto("/share");
+  await expect(page.getByRole("region", { name: "Dossier preview" })).not.toContainText(CASE_STUDY_2.title);
+});

@@ -200,6 +200,38 @@ describe("§3 hero workflow (deterministic)", () => {
     expect(before.notice).toMatch(/^DEMO \/ SYNTHETIC\./);
   });
 
+  it("an artifact's visibility change carries its claims and links into (and out of) the dossier", () => {
+    const caseStudyEvidence = (d: Dataset) =>
+      buildDossier(d, OPP, ctx().now)
+        .requirements.find((r) => r.text === "Two case studies of past work")!
+        .evidence.map((e) => e.artifact.title);
+    // New evidence defaults to private, so it is withheld at first.
+    const added = addEvidence(demoDataset, { ...secondCaseStudy, visibility: undefined }, ctx());
+    expect(caseStudyEvidence(added.data)).not.toContain(secondCaseStudy.title);
+
+    const shared = updateArtifact(added.data, added.artifactId, { visibility: "public" }, ctx());
+    expect(caseStudyEvidence(shared)).toContain(secondCaseStudy.title);
+    const owned = (d: Dataset) => [
+      ...d.claims.filter((c) => c.id === added.claimId),
+      ...d.claimSkillLinks.filter((l) => l.claimId === added.claimId),
+      ...d.requirementEvidenceLinks.filter((l) => l.claimId === added.claimId),
+    ];
+    expect(owned(shared).length).toBeGreaterThan(1);
+    expect(owned(shared).map((r) => r.visibility)).toEqual(owned(shared).map(() => "public"));
+    expect(statuses(shared)).toEqual({ ...START, "req_case-studies": "supported" });
+    intact(shared);
+
+    const hidden = updateArtifact(shared, added.artifactId, { visibility: "private" }, ctx());
+    expect(caseStudyEvidence(hidden)).not.toContain(secondCaseStudy.title);
+    expect(owned(hidden).map((r) => r.visibility)).toEqual(owned(hidden).map(() => "private"));
+    // Human links follow too.
+    const linked = linkEvidence(hidden, "req_language", added.claimId, ctx());
+    const relinked = updateArtifact(linked, added.artifactId, { visibility: "dossier-only" }, ctx());
+    expect(
+      relinked.requirementEvidenceLinks.find((l) => l.claimId === added.claimId && l.requirementId === "req_language")!.visibility,
+    ).toBe("dossier-only");
+  });
+
   it("backup export → fresh import restores every relation with no duplicate ids", () => {
     const { data } = addEvidence(demoDataset, secondCaseStudy, ctx());
     const restored = parseBackup(serializeBackup(data));
