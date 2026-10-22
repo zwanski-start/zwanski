@@ -1,0 +1,23 @@
+{
+  "name": "@proofbridge/fixtures",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Fully synthetic DEMO / SYNTHETIC fixtures for the ProofBridge hero workflow",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@proofbridge/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@proofbridge/config": "workspace:*",
+    "@types/node": "^24.19.2",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5"
+  }
+}

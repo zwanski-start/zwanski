@@ -1,6 +1,6 @@
 # ROADMAP
 
-Delivered vs planned are tracked separately. Nothing below is "delivered" yet.
+Delivered vs planned are tracked separately.
 
 ## Planned (from directive §9)
 - **Phase 0** — discovery + architecture; repo, ADRs, threat model, typed schemas, nav skeleton,
@@ -16,4 +16,7 @@ Delivered vs planned are tracked separately. Nothing below is "delivered" yet.
   Gate: documented release checklist, build artifacts, known limitations listed.
 
 ## Delivered
-- _(none — Phase 0 seed only)_
+- **Phase 0 (partial, issue #3):** pnpm monorepo, typed schemas, Dexie storage with versioned
+  schema, DEMO / SYNTHETIC fixture, nav skeleton rendering fixture data with no API key.
+  Gate met for "boots locally, no API key, renders fixture data"; threat model and competitor
+  review are still open.
