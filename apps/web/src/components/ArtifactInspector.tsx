@@ -13,7 +13,7 @@ import {
 } from "@proofbridge/core";
 import { ConfirmButton, DemoBadge, ErrorText, StatusBadge, inputClass, labelClass } from "@/components/ui";
 import { useData } from "@/lib/data";
-import { formatDateTime } from "@/lib/files";
+import { useI18n } from "@/lib/i18n";
 import { BASIS_LABEL, coverageForArtifact, skillsForClaim } from "@/lib/select";
 import { useAction } from "@/lib/useAction";
 
@@ -27,6 +27,7 @@ const REDACTION_HELP: Record<Redaction, string> = {
 export function ArtifactInspector({ data, artifact, onDeleted }: { data: Dataset; artifact: EvidenceArtifact; onDeleted: () => void }) {
   const { apply } = useData();
   const { run, busy, error } = useAction();
+  const { formatDateTime } = useI18n();
   const source = data.sources.find((s) => s.id === artifact.sourceId);
   const claims = data.claims.filter((c) => c.artifactId === artifact.id);
   const coverage = coverageForArtifact(data, artifact.id);

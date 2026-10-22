@@ -1,10 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
+import { buildRequirementRequest, suggestRequirements, type SuggestionResult } from "@proofbridge/ai";
 import {
   MAX_LISTING_CHARS,
   OpportunitySchema,
-  REQUIREMENT_STATUS_LABEL,
   RequirementStatusSchema,
   addOpportunity,
   linkEvidence,
@@ -13,30 +14,154 @@ import {
   type Dataset,
   type Opportunity,
   type RequirementStatus,
+  type Skill,
 } from "@proofbridge/core";
 import { Button, Card, DemoBadge, ErrorText, PageHeader, StatusBadge, inputClass, labelClass } from "@/components/ui";
 import { WithData } from "@/components/WithData";
 import { useData } from "@/lib/data";
-import { formatDate, requirementPaths, type RequirementPath } from "@/lib/select";
+import { useAiSettings, useEgressLog } from "@/lib/ai";
+import { useI18n } from "@/lib/i18n";
+import { requirementPaths, type RequirementPath } from "@/lib/select";
 import { useAction } from "@/lib/useAction";
 
 const ATTRIBUTION_LABEL = { parser: "suggested by matcher", human: "linked by you", "ai-suggestion": "AI suggestion" } as const;
 
-function AddOpportunityForm() {
+/**
+ * Optional, consent-gated AI suggestions for extra requirement lines. Off by default; when on,
+ * the user previews the exact request and sends it explicitly. Any failure falls back to the
+ * deterministic parser. Accepted suggestions are classified and matched deterministically.
+ */
+function AiSuggestions({
+  rawText,
+  skills,
+  accepted,
+  setAccepted,
+}: {
+  rawText: string;
+  skills: readonly Skill[];
+  accepted: string[];
+  setAccepted: (lines: string[]) => void;
+}) {
+  const { t } = useI18n();
+  const [settings] = useAiSettings();
+  const { append } = useEgressLog();
+  const [previewing, setPreviewing] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<{ text: string; value: SuggestionResult } | null>(null);
+  const on = settings.enabled && settings.consent !== null;
+
+  if (!on) {
+    return (
+      <p className="text-xs text-[var(--fg-muted)]" data-testid="ai-off">
+        {t("ai.off")}{" "}
+        <Link href="/settings" className="underline">
+          {t("nav.settings")}
+        </Link>
+      </p>
+    );
+  }
+
+  const request = buildRequirementRequest(settings, rawText);
+  // Suggestions belong to the text they were made for; editing the listing discards them.
+  const current = result && result.text === rawText ? result.value : null;
+
+  async function send() {
+    setSending(true);
+    setAccepted([]);
+    const value = await suggestRequirements(settings, rawText, skills, {
+      fetch: (url, init) => fetch(url, init),
+      now: () => new Date().toISOString(),
+      onEgress: append,
+    });
+    setResult({ text: rawText, value });
+    setPreviewing(false);
+    setSending(false);
+  }
+
+  return (
+    <section aria-label={t("ai.panel")} className="space-y-2 rounded border border-dashed border-[var(--border)] p-2">
+      <h3 className="text-sm font-medium">{t("ai.panel")}</h3>
+      {!previewing ? (
+        <Button disabled={!rawText.trim() || sending} onClick={() => setPreviewing(true)}>
+          {t("ai.preview")}
+        </Button>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs">{t("ai.previewHelp", { url: request.url })}</p>
+          <pre
+            data-testid="ai-request-preview"
+            dir="ltr"
+            className="max-h-48 overflow-auto rounded bg-[var(--bg)] p-2 text-xs whitespace-pre-wrap"
+          >
+            {JSON.stringify(request.body, null, 2)}
+          </pre>
+          <div className="flex gap-2">
+            <Button variant="primary" disabled={sending} onClick={() => void send()}>
+              {sending ? t("ai.sending") : t("ai.send")}
+            </Button>
+            <Button disabled={sending} onClick={() => setPreviewing(false)}>
+              {t("ai.cancel")}
+            </Button>
+          </div>
+        </div>
+      )}
+      {current?.mode === "deterministic" && (
+        <p role="status" className="text-xs text-amber-700 dark:text-amber-400">
+          {t("ai.fallback", { reason: current.reason })}
+        </p>
+      )}
+      {current?.mode === "ai" && current.suggestions.length === 0 && (
+        <p role="status" className="text-xs">
+          {t("ai.none")}
+        </p>
+      )}
+      {current?.mode === "ai" && current.suggestions.length > 0 && (
+        <fieldset>
+          <legend className="text-xs font-medium">{t("ai.suggestions")}</legend>
+          <ul className="mt-1 space-y-1">
+            {current.suggestions.map((s) => (
+              <li key={s.text}>
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={accepted.includes(s.text)}
+                    onChange={(e) =>
+                      setAccepted(e.target.checked ? [...accepted, s.text] : accepted.filter((a) => a !== s.text))
+                    }
+                  />
+                  <span>
+                    {s.text} <span className="text-xs text-[var(--fg-muted)]">({s.category})</span>
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </fieldset>
+      )}
+    </section>
+  );
+}
+
+function AddOpportunityForm({ skills }: { skills: readonly Skill[] }) {
   const { apply } = useData();
   const { run, busy, error } = useAction();
   const [title, setTitle] = useState("");
   const [organization, setOrganization] = useState("");
   const [kind, setKind] = useState<Opportunity["kind"]>("job");
   const [rawText, setRawText] = useState("");
+  const [accepted, setAccepted] = useState<string[]>([]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    const ok = await run(() => apply((d, ctx) => addOpportunity(d, { title, organization, kind, rawText }, ctx).data));
+    const ok = await run(() =>
+      apply((d, ctx) => addOpportunity(d, { title, organization, kind, rawText, acceptedSuggestions: accepted }, ctx).data),
+    );
     if (ok) {
       setTitle("");
       setOrganization("");
       setRawText("");
+      setAccepted([]);
     }
   }
 
@@ -77,7 +202,10 @@ function AddOpportunityForm() {
           className={inputClass}
           rows={5}
           value={rawText}
-          onChange={(e) => setRawText(e.target.value)}
+          onChange={(e) => {
+            setRawText(e.target.value);
+            setAccepted([]);
+          }}
           required
           maxLength={MAX_LISTING_CHARS}
           placeholder={"Requirements:\n- TypeScript\n- Two case studies of past work"}
@@ -86,6 +214,7 @@ function AddOpportunityForm() {
           Parsed in this browser by fixed keyword rules (no AI). The text is stored as data and never executed.
         </p>
       </div>
+      <AiSuggestions rawText={rawText} skills={skills} accepted={accepted} setAccepted={setAccepted} />
       <ErrorText error={error} />
       <Button type="submit" variant="primary" disabled={busy}>
         {busy ? "Parsing…" : "Parse requirements"}
@@ -96,6 +225,7 @@ function AddOpportunityForm() {
 
 function RequirementReview({ data, path }: { data: Dataset; path: RequirementPath }) {
   const { apply } = useData();
+  const i18n = useI18n();
   const { run, busy, error } = useAction();
   const r = path.requirement;
   const [status, setStatus] = useState<RequirementStatus | "">(r.override?.status ?? "");
@@ -122,7 +252,7 @@ function RequirementReview({ data, path }: { data: Dataset; path: RequirementPat
               <option value="">Let the matcher decide</option>
               {RequirementStatusSchema.options.map((s) => (
                 <option key={s} value={s}>
-                  {REQUIREMENT_STATUS_LABEL[s]}
+                  {i18n.status(s)}
                 </option>
               ))}
             </select>
@@ -211,12 +341,10 @@ function EvidenceList({ path }: { path: RequirementPath }) {
 }
 
 export default function OpportunitiesPage() {
+  const { t, formatDate } = useI18n();
   return (
     <>
-      <PageHeader
-        title="Opportunity Lab"
-        lede="Paste a listing; requirements are parsed and matched to your evidence deterministically, each with a reason and the claims behind it. You can reject a match, link evidence yourself or set a status. “Supported” means the vault holds evidence — not that anything is formally verified."
-      />
+      <PageHeader title={t("opportunities.title")} lede={t("opportunities.lede")} />
       <WithData>
         {(data) => {
           const paths = requirementPaths(data, { includeRejected: true });
@@ -224,9 +352,9 @@ export default function OpportunitiesPage() {
             <div className="space-y-4">
               <Card>
                 <details>
-                  <summary className="cursor-pointer font-medium">Import an opportunity</summary>
+                  <summary className="cursor-pointer font-medium">{t("opportunities.import")}</summary>
                   <div className="mt-3">
-                    <AddOpportunityForm />
+                    <AddOpportunityForm skills={data.skills} />
                   </div>
                 </details>
               </Card>
@@ -241,13 +369,13 @@ export default function OpportunitiesPage() {
                     {formatDate(opp.retrievedAt)} from {opp.sourceLabel}
                   </p>
                   <div className="overflow-x-auto">
-                    <table className="mt-4 w-full text-left text-sm">
+                    <table className="mt-4 w-full text-start text-sm">
                       <caption className="sr-only">Requirements for {opp.title}</caption>
                       <thead className="text-[var(--fg-muted)]">
                         <tr>
-                          <th scope="col" className="py-1 pr-3 font-medium">Requirement</th>
-                          <th scope="col" className="py-1 pr-3 font-medium">Status</th>
-                          <th scope="col" className="py-1 font-medium">Why</th>
+                          <th scope="col" className="py-1 pe-3 font-medium">{t("opportunities.col.requirement")}</th>
+                          <th scope="col" className="py-1 pe-3 font-medium">{t("opportunities.col.status")}</th>
+                          <th scope="col" className="py-1 font-medium">{t("opportunities.col.why")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -255,9 +383,14 @@ export default function OpportunitiesPage() {
                           .filter((p) => p.requirement.opportunityId === opp.id)
                           .map((p) => (
                             <tr key={p.requirement.id} className="border-t border-[var(--border)] align-top">
-                              <th scope="row" className="py-2 pr-3 font-normal">{p.requirement.text}</th>
-                              <td className="py-2 pr-3"><StatusBadge status={p.requirement.status} /></td>
+                              <th scope="row" className="py-2 pe-3 font-normal">{p.requirement.text}</th>
+                              <td className="py-2 pe-3"><StatusBadge status={p.requirement.status} /></td>
                               <td className="py-2">
+                                {p.requirement.origin === "ai-suggestion" && (
+                                  <span className="me-1 inline-block rounded border border-dashed border-[var(--fg-muted)] px-1 text-xs text-[var(--fg-muted)]">
+                                    {t("opportunities.aiOrigin")}
+                                  </span>
+                                )}
                                 {p.requirement.rationale}
                                 <EvidenceList path={p} />
                                 <RequirementReview key={p.requirement.override?.at ?? "auto"} data={data} path={p} />

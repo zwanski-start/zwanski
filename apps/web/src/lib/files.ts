@@ -12,7 +12,15 @@ export const isTextLike = (type: string, name: string) =>
   type.startsWith("text/") || type === "application/json" || /\.(md|markdown|txt|csv|json)$/i.test(name);
 
 export function downloadText(filename: string, text: string, type = "application/json") {
-  const url = URL.createObjectURL(new Blob([text], { type }));
+  downloadBlob(filename, new Blob([text], { type }));
+}
+
+export function downloadBytes(filename: string, bytes: Uint8Array<ArrayBuffer>, type: string) {
+  downloadBlob(filename, new Blob([bytes], { type }));
+}
+
+function downloadBlob(filename: string, blob: Blob) {
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
@@ -22,7 +30,3 @@ export function downloadText(filename: string, text: string, type = "application
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-
-export const formatDateTime = (iso: string) =>
-  new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(iso)) +
-  " UTC";

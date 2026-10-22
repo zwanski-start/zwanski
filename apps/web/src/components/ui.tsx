@@ -2,12 +2,14 @@
 
 import type React from "react";
 import { useState, type ReactNode } from "react";
-import { REQUIREMENT_STATUS_LABEL, type RequirementStatus } from "@proofbridge/core";
+import type { RequirementStatus } from "@proofbridge/core";
+import { useI18n } from "@/lib/i18n";
 
 export function DemoBadge() {
+  const { t } = useI18n();
   return (
     <span className="inline-block rounded border border-dashed border-[var(--fg-muted)] px-1.5 py-0.5 text-[0.65rem] font-semibold tracking-wider text-[var(--fg-muted)] uppercase">
-      Demo / Synthetic
+      {t("demo.badge")}
     </span>
   );
 }
@@ -21,11 +23,12 @@ const STATUS_STYLE: Record<RequirementStatus, string> = {
 };
 
 export function StatusBadge({ status }: { status: RequirementStatus }) {
+  const i18n = useI18n();
   return (
     <span
       className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${STATUS_STYLE[status]}`}
     >
-      {REQUIREMENT_STATUS_LABEL[status]}
+      {i18n.status(status)}
     </span>
   );
 }

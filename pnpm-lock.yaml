@@ -190,6 +190,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@proofbridge/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@proofbridge/core':
         specifier: workspace:*
         version: link:../../packages/core

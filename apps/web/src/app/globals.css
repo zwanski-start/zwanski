@@ -54,3 +54,12 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+ * Mixed-direction content: user data (evidence, listings, claims) keeps its own language when the
+ * UI is Arabic. Each paragraph takes its direction from its first strong character, so English
+ * text in an RTL page keeps its punctuation in place, and Arabic text in an LTR page reads RTL.
+ */
+main :is(p, li, td, th, h1, h2, h3, dd, dt, label, summary, legend, q, pre) {
+  unicode-bidi: plaintext;
+}

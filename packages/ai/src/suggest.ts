@@ -65,6 +65,7 @@ export function parseProviderReply(raw: string): string[] {
   for (const item of payload.requirements) {
     if (typeof item !== "string") continue;
     // Strip control/bidi-override characters so a reply cannot spoof how text renders.
+    // eslint-disable-next-line no-control-regex -- stripping control characters is the point
     const line = item.replace(/[\u0000-\u001f\u007f‪-‮⁦-⁩]/g, " ").replace(/\s+/g, " ").trim();
     if (line && line.length <= MAX_SUGGESTION_CHARS) lines.push(line);
   }

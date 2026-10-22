@@ -231,7 +231,7 @@ const fill = (template: string, vars: Record<string, string | number>) =>
 const shortDate = (iso: string | null) => (iso ? iso.slice(0, 10) : "?");
 
 export interface DossierPdf {
-  bytes: Uint8Array;
+  bytes: Uint8Array<ArrayBuffer>;
   pageCount: number;
   /** Characters that WinAnsi cannot represent and were replaced with "?". */
   replacedChars: number;
