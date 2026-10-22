@@ -155,3 +155,6 @@ Environment: Linux, Node 26.7.0, pnpm 12.11.2, Playwright 1.64.1 driving system 
 - No sync; no live deployment; share service Workers/KV adapter not written.
 - Static-export CSP needs `script-src 'unsafe-inline'`; `next start` sends no CSP.
 - e2e ran on system Chromium only.
+- Flake fixed: `hero-workflow.spec.ts` navigated away right after *Save* on working languages,
+  before the IndexedDB write committed (~2 of 44 runs saw *Unknown*). The test now polls the
+  persisted profile; 55/55 with `--repeat-each=5`.

@@ -97,6 +97,21 @@ test("every §3 transition updates the Opportunity Lab, Proof Graph and dossier 
   await page.goto("/");
   await page.getByLabel(/Working languages/).fill("English");
   await page.getByRole("button", { name: "Save", exact: true }).click();
+  // Wait for the persisted write, not just the input value, before navigating away.
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          new Promise<string[]>((ok) => {
+            const req = indexedDB.open("proofbridge");
+            req.onsuccess = () => {
+              const r = req.result.transaction("profiles").objectStore("profiles").getAll();
+              r.onsuccess = () => ok((r.result as { languages: string[] }[]).flatMap((p) => p.languages));
+            };
+          }),
+      ),
+    )
+    .toContain("English");
   await expect(page.getByLabel(/Working languages/)).toHaveValue("English");
   expect((await statuses(page))[LANGUAGE]).toBe("Uncertain");
 
