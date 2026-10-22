@@ -1,0 +1,25 @@
+{
+  "name": "@proofbridge/storage",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Offline IndexedDB (Dexie) repository with a versioned schema and migrations",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@proofbridge/core": "workspace:*",
+    "dexie": "^4.4.6"
+  },
+  "devDependencies": {
+    "@proofbridge/config": "workspace:*",
+    "@proofbridge/fixtures": "workspace:*",
+    "fake-indexeddb": "^6.2.6",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5"
+  }
+}
