@@ -13,3 +13,6 @@ coverage/
 .turbo/
 playwright-report/
 test-results/
+
+# local MCP server config (may hold auth) — do not commit
+.mcp.json

@@ -11,3 +11,12 @@ _Truth-based progress only. Do not mark unimplemented features complete._
   monorepo skeleton + synthetic fixtures (Phase 0 gate: app boots locally with no API key and
   renders fixture-driven data), then begin the Phase 1 end-to-end vertical slice.
 - **Founder approval required:** none at this stage.
+
+## 2026-10-22 — Project harness added
+- **What works:** repo now ships a project-scoped Claude Code harness so every cubefarm agent
+  clone loads it automatically: `CLAUDE.md` (auto-read context + safety rails), the §8 specialist
+  team in `.claude/agents/` (product-lead, architect, core-data-engineer, web-engineer,
+  extension-engineer, ui-ux-engineer, ai-engineer, security-engineer, qa-engineer,
+  release-engineer), and `docs/HARNESS.md` (how to add safe MCP servers; `.mcp.json` git-ignored).
+- **Tests:** none yet (still no app code).
+- **Next concrete step:** unchanged — CEO/architect scaffold the monorepo + fixtures (Phase 0 gate).
