@@ -1,4 +1,4 @@
-import { DatasetSchema, SCHEMA_VERSION, type Dataset, type DatasetInput } from "@proofbridge/core";
+import { DatasetSchema, SCHEMA_VERSION, rematch, type Dataset, type DatasetInput } from "@proofbridge/core";
 
 /**
  * DEMO / SYNTHETIC — the §3 hero workflow dataset.
@@ -145,7 +145,7 @@ const input = {
   skills: [
     { id: "skill_typescript", ...stamp(T0), name: "TypeScript", aliases: ["TS"] },
     { id: "skill_postgresql", ...stamp(T0), name: "PostgreSQL", aliases: ["Postgres", "SQL"] },
-    { id: "skill_deployment", ...stamp(T0), name: "Deployment", aliases: ["DevOps", "Hosting"] },
+    { id: "skill_deployment", ...stamp(T0), name: "Deployment", aliases: ["DevOps", "Hosting", "Deploying", "Deployed"] },
   ],
   claimSkillLinks: [
     {
@@ -202,7 +202,6 @@ const input = {
       category: "skill",
       skillId: "skill_typescript",
       status: "supported",
-      rationale: "Approved claim from the repository export links to TypeScript.",
     },
     {
       id: "req_postgresql",
@@ -212,7 +211,6 @@ const input = {
       category: "skill",
       skillId: "skill_postgresql",
       status: "supported",
-      rationale: "Approved claims from the repository export and course certificate link to PostgreSQL.",
     },
     {
       id: "req_deployment",
@@ -222,7 +220,6 @@ const input = {
       category: "experience",
       skillId: "skill_deployment",
       status: "uncertain",
-      rationale: "No evidence of a deployment is present yet.",
     },
     {
       id: "req_case-studies",
@@ -232,7 +229,6 @@ const input = {
       category: "portfolio",
       minCount: 2,
       status: "not-yet-supported",
-      rationale: "Only one case study is in the vault; two are required.",
     },
     {
       id: "req_language",
@@ -241,51 +237,11 @@ const input = {
       text: "Professional working proficiency in the team language",
       category: "language",
       status: "unknown",
-      rationale: "Language proficiency has not been stated or evidenced.",
     },
   ],
-  requirementEvidenceLinks: [
-    {
-      id: "rel_typescript-repo",
-      ...stamp(T_OPP),
-      requirementId: "req_typescript",
-      claimId: "claim_repo-typescript",
-      relationship: "supports",
-      attribution: "parser",
-      reviewState: "approved",
-      visibility: "dossier-only",
-    },
-    {
-      id: "rel_postgres-repo",
-      ...stamp(T_OPP),
-      requirementId: "req_postgresql",
-      claimId: "claim_repo-postgres",
-      relationship: "supports",
-      attribution: "parser",
-      reviewState: "approved",
-      visibility: "dossier-only",
-    },
-    {
-      id: "rel_postgres-course",
-      ...stamp(T_OPP),
-      requirementId: "req_postgresql",
-      claimId: "claim_course-databases",
-      relationship: "supports",
-      attribution: "parser",
-      reviewState: "approved",
-      visibility: "private",
-    },
-    {
-      id: "rel_case-studies-1",
-      ...stamp(T_OPP),
-      requirementId: "req_case-studies",
-      claimId: "claim_case-study-1",
-      relationship: "partially-supports",
-      attribution: "parser",
-      reviewState: "approved",
-      visibility: "dossier-only",
-    },
-  ],
+  // Requirement → evidence links are not hand-written: the deterministic matcher derives them
+  // (and each status + rationale) below, exactly as it does for user data.
+  requirementEvidenceLinks: [],
   bridgeTasks: [
     {
       id: "task_deploy-taskboard",
@@ -312,7 +268,12 @@ const input = {
       state: "proposed",
     },
   ],
+  auditEvents: [],
 } satisfies DatasetInput;
 
-/** The parsed, schema-validated demo dataset. Throws at import time if the fixture drifts. */
-export const demoDataset: Dataset = DatasetSchema.parse(input);
+/**
+ * The parsed, schema-validated demo dataset with links and statuses computed by the matcher.
+ * The `status` values written above are the §3 expectations; the fixture tests check that the
+ * matcher reproduces them. Throws at import time if the fixture drifts from the schema.
+ */
+export const demoDataset: Dataset = rematch(DatasetSchema.parse(input), T_OPP);

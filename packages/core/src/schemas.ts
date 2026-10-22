@@ -2,12 +2,13 @@ import { z } from "zod";
 
 /**
  * Domain contract for the evidence → claim → skill → requirement → opportunity → next-step
- * pipeline (directive §5). Phase 0 covers the entities needed to render the synthetic demo;
- * Dossier/CaptureEvent/ConsentGrant/ExternalIntegration/AuditEvent land with the features
- * that use them.
+ * pipeline (directive §5). Phase 1 adds artifact redaction state, human status overrides on
+ * requirements and an append-only `AuditEvent` change history. Dossier/CaptureEvent/
+ * ConsentGrant/ExternalIntegration land with the features that use them.
  */
 
-export const SCHEMA_VERSION = 1;
+/** Version 1: Phase 0 subset. Version 2: redaction, requirement overrides, audit events. */
+export const SCHEMA_VERSION = 2;
 
 /** Stable, portable identifier: `<prefix>_<slug>` (lowercase, digits, `-`). */
 export const IdSchema = z
@@ -22,6 +23,11 @@ export const CaptureMethodSchema = z.enum(["manual", "local-file", "selected-web
 export const AttributionSchema = z.enum(["human", "parser", "ai-suggestion"]);
 export const ReviewStateSchema = z.enum(["unreviewed", "approved", "rejected"]);
 export const VisibilitySchema = z.enum(["private", "dossier-only", "public"]);
+export const RedactionSchema = z.enum(["none", "partial", "redacted"]);
+export type Redaction = z.infer<typeof RedactionSchema>;
+
+/** Upper bound on stored artifact text (characters); larger imports are rejected. */
+export const MAX_CONTENT_CHARS = 200_000;
 
 /**
  * How strongly a claim is backed. A hash proves byte identity only — never authenticity —
@@ -88,7 +94,11 @@ export const EvidenceArtifactSchema = z.object({
   /** SHA-256 of the original bytes when bytes exist; integrity only, not authenticity. */
   sha256: Sha256HexSchema.optional(),
   summary: z.string().default(""),
+  /** Captured text, when the artifact is text the user entered or imported locally. */
+  content: z.string().max(MAX_CONTENT_CHARS).optional(),
   visibility: VisibilitySchema,
+  /** "redacted" artifacts never leave the vault; "partial" share metadata but not content. */
+  redaction: RedactionSchema.default("none"),
 });
 export type EvidenceArtifact = z.infer<typeof EvidenceArtifactSchema>;
 
@@ -132,6 +142,13 @@ export const OpportunitySchema = z.object({
 });
 export type Opportunity = z.infer<typeof OpportunitySchema>;
 
+export const RequirementOverrideSchema = z.object({
+  status: RequirementStatusSchema,
+  note: z.string().max(500).default(""),
+  at: IsoDateTimeSchema,
+});
+export type RequirementOverride = z.infer<typeof RequirementOverrideSchema>;
+
 export const OpportunityRequirementSchema = z.object({
   ...RecordBase,
   opportunityId: IdSchema,
@@ -141,11 +158,24 @@ export const OpportunityRequirementSchema = z.object({
   skillId: IdSchema.optional(),
   /** For countable requirements such as "two case studies". */
   minCount: z.number().int().positive().optional(),
-  /** Persisted snapshot; the deterministic matching engine (Phase 1) recomputes this. */
+  /** Effective status, recomputed by the deterministic matcher (`rematch`) after every change. */
   status: RequirementStatusSchema,
   rationale: z.string().default(""),
+  /** A human decision that wins over the matcher until cleared. */
+  override: RequirementOverrideSchema.optional(),
 });
 export type OpportunityRequirement = z.infer<typeof OpportunityRequirementSchema>;
+
+export const AuditEventSchema = z.object({
+  ...RecordBase,
+  at: IsoDateTimeSchema,
+  entityTable: z.string().min(1),
+  entityId: IdSchema,
+  action: z.enum(["create", "update", "delete", "import"]),
+  /** Human-readable description of what changed (never the content itself). */
+  summary: z.string().min(1),
+});
+export type AuditEvent = z.infer<typeof AuditEventSchema>;
 
 export const RequirementEvidenceLinkSchema = z.object({
   ...RecordBase,
@@ -178,6 +208,7 @@ export const DatasetSchema = z.object({
   requirements: z.array(OpportunityRequirementSchema),
   requirementEvidenceLinks: z.array(RequirementEvidenceLinkSchema),
   bridgeTasks: z.array(BridgeTaskSchema),
+  auditEvents: z.array(AuditEventSchema),
 });
 export type Dataset = z.infer<typeof DatasetSchema>;
 export type DatasetInput = z.input<typeof DatasetSchema>;
@@ -193,5 +224,6 @@ export const ENTITY_TABLES = [
   "requirements",
   "requirementEvidenceLinks",
   "bridgeTasks",
+  "auditEvents",
 ] as const satisfies readonly Exclude<keyof Dataset, "schemaVersion">[];
 export type EntityTable = (typeof ENTITY_TABLES)[number];
