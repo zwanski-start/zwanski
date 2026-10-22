@@ -12,15 +12,24 @@ Generated claims are never presented as formally verified.
 
 ## Status
 
-**Phase 0 — scaffolding.** This repo currently contains only the canonical build directive
-and governance stubs. No application code has been built yet. See `STATUS.md` for truth-based
-progress and `docs/MASTER_BUILD_PROMPT.md` for the full directive.
+**Phase 0 — skeleton.** A pnpm/TypeScript monorepo with typed schemas, offline IndexedDB
+storage and a Next.js shell that renders a DEMO / SYNTHETIC vault. No import, matching or export
+features yet. See `STATUS.md` for truth-based progress and `docs/MASTER_BUILD_PROMPT.md` for the
+full directive.
 
 ## How this gets built
 
 An autonomous agent team (see `AGENTS.md`) implements the directive in phases (`ROADMAP.md`).
 Every work unit ships with tests and honest status — no invented progress.
 
-## Quick start (once Phase 1 lands)
+## Quick start
 
-A no-API-key, offline synthetic demo is a Phase 1 gate. Commands will live in `QUICKSTART.md`.
+Requires Node ≥ 20.9 and pnpm 12 (`corepack enable`). No API key or account.
+
+```sh
+pnpm install
+pnpm dev          # http://localhost:3000
+pnpm lint && pnpm typecheck && pnpm test && pnpm build
+```
+
+Full steps from an empty machine: `QUICKSTART.md`. Layout and data flow: `ARCHITECTURE.md`.
