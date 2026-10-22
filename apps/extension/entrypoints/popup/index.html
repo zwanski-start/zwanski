@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ProofBridge Capture</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <h1>ProofBridge Capture</h1>
+      <p class="muted">
+        Nothing is read from a page until you press a button below. You review the text before it is queued,
+        and it stays in this browser until your local ProofBridge imports it.
+      </p>
+
+      <div class="row">
+        <button type="button" id="capture-opportunity" class="primary">Capture this opportunity</button>
+        <button type="button" id="capture-selection">Save selected evidence</button>
+      </div>
+      <p id="status" role="status" aria-live="polite"></p>
+
+      <form id="preview" hidden aria-label="Capture preview">
+        <h2>Preview — check before saving</h2>
+        <p class="muted" id="preview-source"></p>
+        <fieldset>
+          <legend>Save as</legend>
+          <label><input type="radio" name="kind" value="opportunity" /> Opportunity (listing)</label>
+          <label><input type="radio" name="kind" value="evidence" /> Evidence (excerpt)</label>
+        </fieldset>
+        <label for="preview-title">Title</label>
+        <input id="preview-title" maxlength="200" required />
+        <label for="preview-text">Captured text</label>
+        <textarea id="preview-text" rows="10" maxlength="20000" required></textarea>
+        <p class="muted" id="preview-note"></p>
+        <div class="row">
+          <button type="submit" class="primary">Confirm &amp; queue</button>
+          <button type="button" id="preview-discard">Discard</button>
+        </div>
+      </form>
+
+      <section aria-labelledby="queue-heading">
+        <h2 id="queue-heading">Queued for ProofBridge (<span id="queue-count">0</span>)</h2>
+        <ul id="queue" aria-label="Queued captures"></ul>
+        <div class="row">
+          <button type="button" id="send" class="primary">Send to local ProofBridge</button>
+          <button type="button" id="download">Download as file</button>
+          <button type="button" id="clear" class="danger">Delete all</button>
+        </div>
+        <p class="muted">
+          “Send” opens your app’s Capture Inbox, which asks before importing. No ProofBridge running locally? Download
+          the queue and import the file in Capture Inbox.
+        </p>
+      </section>
+
+      <details>
+        <summary>Settings</summary>
+        <label for="app-url">ProofBridge app address</label>
+        <div class="row">
+          <input id="app-url" inputmode="url" />
+          <button type="button" id="save-url">Save</button>
+        </div>
+        <p class="muted">Only http(s)://localhost or 127.0.0.1. Only this exact origin can read your queue.</p>
+      </details>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

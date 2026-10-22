@@ -6,3 +6,4 @@ export * from "./matching";
 export * from "./ops";
 export * from "./dossier";
 export * from "./backup";
+export * from "./capture";

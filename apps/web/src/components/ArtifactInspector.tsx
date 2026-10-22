@@ -45,6 +45,13 @@ export function ArtifactInspector({ data, artifact, onDeleted }: { data: Dataset
       <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
         <dt className="text-[var(--fg-muted)]">Source</dt>
         <dd>{source?.label ?? "Unavailable"}</dd>
+        {source?.uri && (
+          <>
+            <dt className="text-[var(--fg-muted)]">Source address</dt>
+            {/* Shown as text, not a link: it came from an untrusted page. */}
+            <dd className="font-mono text-xs break-all">{source.uri}</dd>
+          </>
+        )}
         <dt className="text-[var(--fg-muted)]">Captured</dt>
         <dd>{source ? `${formatDateTime(source.capturedAt)} · ${source.captureMethod}` : "Unknown"}</dd>
         <dt className="text-[var(--fg-muted)]">Added</dt>

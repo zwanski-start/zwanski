@@ -12,10 +12,11 @@ Generated claims are never presented as formally verified.
 
 ## Status
 
-**Phase 0 — skeleton.** A pnpm/TypeScript monorepo with typed schemas, offline IndexedDB
-storage and a Next.js shell that renders a DEMO / SYNTHETIC vault. No import, matching or export
-features yet. See `STATUS.md` for truth-based progress and `docs/MASTER_BUILD_PROMPT.md` for the
-full directive.
+**Phase 2 — capture extension.** Offline Evidence Vault, deterministic requirement matching,
+dossier export and backup (Phase 1), plus a least-privilege Chromium MV3 extension
+(`apps/extension`) that captures a listing or selected text only on click, after preview and
+confirmation, into the local app's Capture Inbox. See `STATUS.md` for truth-based progress and
+`docs/MASTER_BUILD_PROMPT.md` for the full directive.
 
 ## How this gets built
 
@@ -30,6 +31,7 @@ Requires Node ≥ 20.9 and pnpm 12 (`corepack enable`). No API key or account.
 pnpm install
 pnpm dev          # http://localhost:3000
 pnpm lint && pnpm typecheck && pnpm test && pnpm build
+# extension: load apps/extension/.output/chrome-mv3 via chrome://extensions → "Load unpacked"
 ```
 
 Full steps from an empty machine: `QUICKSTART.md`. Layout and data flow: `ARCHITECTURE.md`.

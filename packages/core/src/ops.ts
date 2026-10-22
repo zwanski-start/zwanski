@@ -79,8 +79,12 @@ export interface NewEvidenceInput {
   /** SHA-256 hex of the original bytes, computed by the caller (WebCrypto / node:crypto). */
   sha256?: string;
   mediaType?: string;
-  captureMethod: "manual" | "local-file";
+  captureMethod: "manual" | "local-file" | "selected-webpage";
   sourceLabel: string;
+  /** Where the evidence came from (e.g. the page a browser capture was taken on). */
+  sourceUri?: string;
+  /** When the source was captured, if earlier than this change (defaults to now). */
+  capturedAt?: string;
   /** The claim this evidence supports, in the user's words. */
   claim: string;
   basis?: EvidenceClaim["basis"];
@@ -107,7 +111,8 @@ export function addEvidence(data: Dataset, input: NewEvidenceInput, ctx: OpConte
     ...stamp,
     label: input.sourceLabel.trim() || title,
     captureMethod: input.captureMethod,
-    capturedAt: ctx.now,
+    capturedAt: input.capturedAt ?? ctx.now,
+    ...(input.sourceUri ? { uri: input.sourceUri } : {}),
   };
   const content = input.content?.length ? input.content : undefined;
   const artifact: EvidenceArtifact = {
@@ -235,6 +240,9 @@ export interface NewOpportunityInput {
   organization?: string;
   kind: Opportunity["kind"];
   sourceLabel?: string;
+  sourceUri?: string;
+  /** When the listing was retrieved, if earlier than this change (defaults to now). */
+  retrievedAt?: string;
   rawText: string;
 }
 
@@ -255,7 +263,8 @@ export function addOpportunity(data: Dataset, input: NewOpportunityInput, ctx: O
     organization: input.organization?.trim() || "Unknown",
     kind: input.kind,
     sourceLabel: input.sourceLabel?.trim() || "Pasted listing text",
-    retrievedAt: ctx.now,
+    ...(input.sourceUri ? { sourceUri: input.sourceUri } : {}),
+    retrievedAt: input.retrievedAt ?? ctx.now,
     location: "Unknown",
     remote: "unknown",
     rawText: input.rawText,
