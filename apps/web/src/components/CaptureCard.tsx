@@ -16,7 +16,8 @@ import {
 } from "@proofbridge/core";
 import { Button, ErrorText, inputClass, labelClass } from "@/components/ui";
 import { useData } from "@/lib/data";
-import { formatDateTime, sha256Hex, utf8 } from "@/lib/files";
+import { sha256Hex, utf8 } from "@/lib/files";
+import { useI18n } from "@/lib/i18n";
 import { useAction } from "@/lib/useAction";
 
 /**
@@ -37,6 +38,7 @@ export function CaptureCard({
 }) {
   const { apply } = useData();
   const { run, busy, error } = useAction();
+  const { formatDateTime } = useI18n();
   const [as, setAs] = useState<CaptureKind>(capture.kind);
   const [title, setTitle] = useState(capture.title);
   const [oppKind, setOppKind] = useState<Opportunity["kind"]>("job");

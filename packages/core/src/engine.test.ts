@@ -102,6 +102,19 @@ describe("matching engine via addOpportunity", () => {
     expect(data.auditEvents).toHaveLength(1);
   });
 
+  it("adds accepted AI suggestions with deterministic classification and an ai-suggestion origin", () => {
+    const { data, opportunityId } = addOpportunity(
+      empty(),
+      { title: "Listing", kind: "job", rawText: "Requirements: TypeScript", acceptedSuggestions: ["typescript", "  ", "Node.js tooling"] },
+      { now: at, newId: sequentialIds() },
+    );
+    const reqs = data.requirements.filter((r) => r.opportunityId === opportunityId);
+    expect(reqs.map((r) => [r.text, r.category, r.origin, r.status])).toEqual([
+      ["TypeScript", "skill", undefined, "uncertain"],
+      ["Node.js tooling", "skill", "ai-suggestion", "uncertain"],
+    ]);
+  });
+
   it("refuses listings with no requirements", () => {
     expect(() => addOpportunity(empty(), { title: "x", kind: "job", rawText: "   " }, { now: at, newId: sequentialIds() })).toThrow(
       /No requirements/,

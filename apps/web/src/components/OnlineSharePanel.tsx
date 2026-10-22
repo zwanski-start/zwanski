@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { buildDossier, type Dataset } from "@proofbridge/core";
 import { Button, ErrorText, inputClass, labelClass } from "@/components/ui";
-import { formatDateTime } from "@/lib/files";
+import { useI18n } from "@/lib/i18n";
 import {
   EXPIRY_OPTIONS,
   createShare,
@@ -88,6 +88,7 @@ function SetupForm({ onEnabled }: { onEnabled: (s: ShareSettings) => void }) {
 }
 
 export function OnlineSharePanel({ data }: { data: Dataset }) {
+  const { formatDateTime } = useI18n();
   // Rendered only after the vault loads (client-side), so localStorage is available.
   const [settings, setSettings] = useState<ShareSettings | null>(() => loadShareSettings());
   const [remote, setRemote] = useState<Map<string, RemoteShare> | null>(null);

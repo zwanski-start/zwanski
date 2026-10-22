@@ -12,7 +12,7 @@ import type { ShareStore } from "../../share-server/src/store.ts";
  * with an injected clock, so expiry is tested without waiting.
  */
 
-const ROUTES = ["/", "/evidence", "/opportunities", "/graph", "/plan", "/inbox", "/share"];
+const ROUTES = ["/", "/evidence", "/opportunities", "/graph", "/plan", "/inbox", "/share", "/settings"];
 const OPP_TITLE = "Junior Full-Stack Developer (synthetic listing)";
 
 let clock = Date.now();

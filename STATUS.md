@@ -119,6 +119,56 @@ _Truth-based progress only. Do not mark unimplemented features complete._
   provider-optional intelligence + localization.
 - **Founder approval required:** none (Web Store publishing would need an account — not done).
 
+## 2026-10-22 — Phase 3: optional provider intelligence + EN/FR/AR + PDF (issue #6)
+- **What works:**
+  - **Optional AI, off by default.** New `packages/ai`. Settings → "AI assistance" accepts only
+    a model endpoint on this machine (Ollama-compatible, `localhost`/`127.0.0.1`/`[::1]`). It
+    needs an explicit consent checkbox, and the grant covers one exact origin plus the scope
+    "listing-text". In Opportunity Lab the user previews the exact JSON request, then clicks
+    Send. The model's lines come back as unverified checkboxes. Ticked lines become
+    requirements marked "AI-suggested, accepted by you"; their status is still computed by the
+    deterministic matcher. Any refusal or failure falls back to the deterministic parser and
+    shows the reason. Settings shows a metadata-only egress log and can revoke consent.
+  - **Localization:** EN/FR/AR language switcher in the header and Settings. `<html lang dir>`
+    is applied before paint. Arabic renders RTL, mixed-script user data keeps its own
+    direction, and dates are localized (Arabic month names with Latin digits). Translated: the
+    shell, navigation, all page headers, status labels, Compass, Share Studio, Settings, the
+    Opportunity Lab table headers and the AI panel.
+  - **PDF dossier:** Share Studio → "Download dossier (PDF)". Dependency-free PDF 1.7 from the
+    same `Dossier` object as the JSON export, so disclosure is identical. Each evidence item
+    lists its source, capture date and SHA-256. http(s) sources are clickable, and the PDF
+    paginates with a page footer. PDF labels follow the UI language for EN and FR.
+- **Tests:** `pnpm lint` ✓, `pnpm typecheck` ✓ (5 packages), `pnpm test` ✓ 69 tests (core 15,
+  fixtures 24 incl. 6 PDF, ai 9, storage 8, web 13 incl. 8 i18n), `pnpm build` ✓,
+  `pnpm e2e` ✓ 10 Playwright tests: the 4 Phase 1 tests unchanged plus 6 Phase 3 tests
+  (zero egress with AI off; consent gating; exact-payload send + accept + revoke; endpoint-down
+  fallback; EN→FR→AR RTL smoke with reload; PDF export). Locally the PDF also passes
+  `qpdf --check`, and that test is skipped where qpdf is not installed. Details:
+  `docs/TEST_REPORT.md`.
+  After merging Phase 2 (#11) into this branch: lint ✓, typecheck ✓ (6 packages), 96 unit
+  tests ✓, build ✓, web e2e 10/10 ✓, extension e2e 3/3 ✓.
+- **What does not work / limits:**
+  - **Translation is partial.** Evidence Vault forms and inspector, requirement review
+    controls, the matcher's rationale sentences and the Capture Inbox page body (from Phase 2;
+    only its nav entry is translated) are still English only.
+  - **PDF character set.** The PDF uses the built-in Helvetica/WinAnsi fonts, so Arabic (and
+    any non-Western-European) text is replaced with "?". The UI says so and gives a count, and
+    the JSON dossier stays lossless. With an Arabic UI, PDF labels are English. Embedding an
+    Arabic-capable font with shaping is a follow-up.
+  - **AI scope.** AI only suggests requirement lines. There is no AI claim extraction and no
+    AI match suggestions yet. Cloud providers are not implemented (they would need provider
+    accounts, which is blocked).
+  - **No real model run.** The AI path was e2e-tested against a Playwright-mocked
+    `localhost:11434`, not a real Ollama.
+  - **No CSP header yet.** Egress is enforced in code, not by browser policy.
+- **Security notes:** see `SECURITY.md` → "Phase 3". Nothing leaves the device without
+  opt-in, per-request preview and Send. Model output is untrusted, bounded and deterministically
+  re-classified. Consent and the egress log are device-local and never part of backups.
+- **Next concrete step:** CSP `connect-src` tied to the consented origin; translate Evidence
+  Vault and matcher rationales; an embedded Unicode font with Arabic shaping for the PDF;
+  optional AI claim/match suggestions using the same egress boundary.
+- **Founder approval required:** none (no cloud provider, no keys, nothing deployed).
+
 ## 2026-10-22 — Phase 4: release readiness + optional encrypted share (issue #7)
 - **What works:** Share Studio **Encrypted backup** (AES-256-GCM, PBKDF2-SHA-256 600k, header as
   AAD; wrong passphrase/tampering refused). Opt-in **Online share link**: the dossier is encrypted

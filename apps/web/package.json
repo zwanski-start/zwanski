@@ -13,6 +13,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@proofbridge/ai": "workspace:*",
     "@proofbridge/core": "workspace:*",
     "@proofbridge/fixtures": "workspace:*",
     "@proofbridge/storage": "workspace:*",

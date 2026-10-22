@@ -10,7 +10,7 @@ const staticExport = process.env.PROOFBRIDGE_STATIC_EXPORT === "1";
 const nextConfig: NextConfig = {
   ...(staticExport ? { output: "export" as const, distDir: ".next-export" } : {}),
   // Workspace packages ship TypeScript source; Next compiles them.
-  transpilePackages: ["@proofbridge/core", "@proofbridge/fixtures", "@proofbridge/storage"],
+  transpilePackages: ["@proofbridge/ai", "@proofbridge/core", "@proofbridge/fixtures", "@proofbridge/storage"],
   // Local-first: no telemetry-style beacons, no remote images.
   images: { unoptimized: true },
   poweredByHeader: false,

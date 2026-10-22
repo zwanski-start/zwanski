@@ -43,7 +43,7 @@ const webOut = join(root, "apps", "web", ".next-export");
 const files = walk(webOut).map((f) => relative(webOut, f));
 const forbidden = files.filter((f) => /\.map$|(^|\/)\.env/.test(f));
 if (forbidden.length) throw new Error(`Static export contains files that must not ship: ${forbidden.join(", ")}`);
-for (const route of ["index.html", "evidence.html", "opportunities.html", "graph.html", "plan.html", "inbox.html", "share.html", "sw.js"]) {
+for (const route of ["index.html", "evidence.html", "opportunities.html", "graph.html", "plan.html", "inbox.html", "share.html", "settings.html", "sw.js"]) {
   if (!files.includes(route)) throw new Error(`Static export is missing ${route}`);
 }
 // Security headers for static hosts that read a `_headers` file (e.g. Cloudflare Pages).

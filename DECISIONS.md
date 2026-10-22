@@ -98,6 +98,35 @@ Engineering tradeoffs and assumptions (ADR-lite). Agents append here instead of 
     `hostile.test` and a `?tab=` popup parameter, both compiled out of production; hostile pages
     are served via Playwright routing, so no extra port is used.
 
+- **2026-10-22 — Phase 3 (issue #6).**
+  - **New `packages/ai`, pure and injected.** Settings, consent, the egress guard and
+    suggestion parsing are plain functions with `fetch` and the clock passed in, so the
+    "nothing leaves without opt-in" property is unit-tested with a fetch spy rather than
+    assumed.
+  - **Local model first; cloud blocked.** Per directive §6, only a user-run Ollama-compatible
+    endpoint on loopback is accepted. Cloud providers would need accounts and keys, which are
+    blocked actions, so they are not implemented.
+  - **Three-step consent.** (1) Enable, (2) a consent grant bound to the exact origin and the
+    `listing-text` scope (changing the endpoint drops it), (3) a per-request preview of the
+    exact JSON plus an explicit Send. No background calls.
+  - **AI proposes, the user decides, the matcher judges.** Suggestions are re-classified by the
+    same deterministic rules and only added when ticked. `OpportunityRequirement.origin`
+    (optional, so schema v2 data stays valid without a Dexie migration) records
+    `ai-suggestion`; status always comes from `rematch`.
+  - **Consent and the egress log live in `localStorage`, not in the vault.** A backup restored
+    elsewhere must not carry consent. The log stores metadata only.
+  - **i18n without a library.** About 100 keys did not justify adding next-intl/i18next. Typed
+    catalogs + `useSyncExternalStore` over `localStorage`, and a test enforces key and
+    placeholder parity. Routes stay unprefixed: the app is a static, offline, single-user
+    shell, so locale routing would add nothing.
+  - **The "Supported" status is "Étayée" in French and "مدعوم" in Arabic.** e2e tests run in
+    English (the default), so the Phase 1 tests are unchanged.
+  - **PDF writer written in-house** (~300 lines, no dependency) instead of pdf-lib/jsPDF. It
+    keeps the output auditable (no scripts or embedded files possible) and adds nothing to the
+    bundle or the supply chain. The trade-off is that it is limited to WinAnsi.
+  - **Mixed-direction text** uses `unicode-bidi: plaintext` on text blocks inside `<main>`
+    instead of `dir="auto"` attributes on every element.
+
 - **2026-10-22 — Phase 4 release readiness + optional share (issue #7).**
   - **Share links instead of sync.** The gate asks for share links with expiry + revocation and
     sync only "if built". Sync needs a provider account (founder approval), conflict semantics and

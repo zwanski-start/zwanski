@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { NAV_ITEMS, isActive } from "@/lib/nav";
+import { useI18n } from "@/lib/i18n";
+import { NAV_ITEMS, isActive, navDescKey, navLabelKey } from "@/lib/nav";
 
 export function Nav() {
   const pathname = usePathname() ?? "/";
+  const { t } = useI18n();
   return (
     <nav aria-label="Primary">
       <ul className="flex flex-wrap gap-1">
@@ -16,14 +18,14 @@ export function Nav() {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                title={item.description}
+                title={t(navDescKey(item))}
                 className={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
                   active
                     ? "bg-[var(--accent)] text-[var(--surface)]"
                     : "text-[var(--fg)] hover:bg-[var(--accent-soft)]"
                 }`}
               >
-                {item.label}
+                {t(navLabelKey(item))}
               </Link>
             </li>
           );

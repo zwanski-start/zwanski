@@ -30,6 +30,12 @@ Delivered vs planned are tracked separately.
   (exact-origin check), file fallback, manifest audit in the build, extension threat model in
   `SECURITY.md`, real-browser e2e (no passive capture, hostile pages inert, capture → import).
   Not yet: Web Store packaging, Firefox, `CaptureEvent`/`ConsentGrant` entities.
+- **Phase 3 (partial, issue #6):** optional, consent-gated local-AI requirement suggestions
+  that degrade to the deterministic parser (consent/egress unit + e2e tests); EN/FR/AR UI
+  with RTL and localized dates (localization smoke tests); source-linked PDF dossier export.
+  Not yet: full translation of the Evidence Vault and matcher rationales, Arabic glyphs in the
+  PDF, AI claim/match suggestions, cloud providers (blocked), and a CSP.
+
 - **Phase 4 (partial, issue #7):** opt-in online share links (client-side AES-GCM encrypted
   dossier, key only in the link fragment) via a self-hostable zero-dependency share service with
   server-enforced expiry (5 min – 30 days) and revocation, owner-scoped tenant isolation, CORS

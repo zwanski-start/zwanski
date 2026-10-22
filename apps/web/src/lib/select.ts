@@ -73,9 +73,6 @@ export function nextAction(data: Dataset): BridgeTask | undefined {
     .sort((a, b) => a.effortHours - b.effortHours || (a.id < b.id ? -1 : 1))[0];
 }
 
-export const formatDate = (iso: string) =>
-  new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(iso));
-
 export const BASIS_LABEL = {
   "user-stated": "User-stated",
   "source-present": "Source-present",
