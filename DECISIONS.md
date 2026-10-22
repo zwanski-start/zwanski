@@ -38,3 +38,40 @@ Engineering tradeoffs and assumptions (ADR-lite). Agents append here instead of 
   writing a second `AGENTS.md`.
 - **No Docker / containers.** Node + pnpm native only, per `ARCHITECTURE.md`.
 - **CI** runs install/lint/typecheck/test/build on GitHub Actions for PRs; it deploys nothing.
+
+- **2026-10-22 — Phase 1 vertical slice (issue #4).**
+  - **Matching is recomputed, not stored by hand.** `rematch` derives every requirement's links
+    and status from claims/skills/artifacts after every op; the demo fixture no longer hand-writes
+    `requirementEvidenceLinks` — it runs the matcher at import, and a test asserts the §3 states
+    and that rematching is a fixed point. Auto links get deterministic ids
+    (`rel_<req>--<claim>`) so rematching is idempotent.
+  - **"Case study" = artifact of kind `write-up`.** Countable portfolio requirements count
+    distinct write-up artifacts with a backed (not `unverified`) claim. Simple, explainable,
+    deterministic; a human can reject a match or link other evidence.
+  - **Deployment with no proof is Uncertain, not Not-yet**, per §3. Generalised: a known-skill
+    requirement with no evidence is Uncertain; a countable one short of its count is Not yet
+    supported; language/eligibility with nothing known is Unknown. Eligibility is never assessed.
+  - **Language "stated" ≠ "evidenced".** Profile languages make a language requirement Uncertain
+    (the listing's language is not known); a linked claim or a human decision makes it Supported.
+  - **Human oversight** = reject/restore a match (rejections persist across rematching), link a
+    claim manually, or set a status override with a note; the matcher's reasoning stays visible.
+  - **Pure ops + atomic diff commit.** All mutations are `Dataset → Dataset` functions in core
+    (time and ids injected → deterministic tests); storage applies them in one transaction and
+    refuses results with duplicate ids or dangling refs. The vault is small, so reading it whole
+    per change is fine for Phase 1; revisit if vaults grow to thousands of records.
+  - **Change history** is an append-only `AuditEvent` table (schema v2) that records what changed
+    (field names, visibility/redaction transitions), never content.
+  - **Redaction state** on artifacts: `none` / `partial` (no text shared) / `redacted` (never in a
+    dossier). It affects sharing only; redacted evidence still counts in the private vault.
+  - **One dossier format: JSON** (`proofbridge.dossier` v1), previewed in Share Studio. No
+    Dossier/DossierItem tables yet — the dossier is derived on demand from persisted state. PDF is
+    Phase 3.
+  - **Backup restore replaces the vault** (clear + add in one transaction) instead of merging, so
+    a fresh install that already seeded the demo cannot end up with duplicates or stale records.
+  - **Requirement ids from a parsed listing** are `req_<opportunity-suffix>-NN` so storage order
+    (by id) equals listing order.
+  - **Service worker only in production builds** and only for the app shell; hand-written (no
+    next-pwa/workbox dependency) to keep the cached surface small and auditable.
+  - **Playwright e2e runs against `next start`** (the SW needs a production build) on port 5290 by
+    default; `PW_CHROMIUM_PATH` allows a system Chromium where `playwright install` is not
+    possible. CI installs Playwright's Chromium and runs it after the build.
