@@ -12,15 +12,25 @@ Generated claims are never presented as formally verified.
 
 ## Status
 
-**Phase 0 — scaffolding.** This repo currently contains only the canonical build directive
-and governance stubs. No application code has been built yet. See `STATUS.md` for truth-based
-progress and `docs/MASTER_BUILD_PROMPT.md` for the full directive.
+**Phase 0 complete — the app boots and renders a synthetic demo with no API key.**
+A pnpm monorepo (`apps/web`, `packages/core`, `packages/fixtures`, `packages/config`) with typed
+Zod schemas, a deterministic requirement-matching engine, six screens, and 14 passing unit tests.
+See `STATUS.md` for truth-based progress and `docs/MASTER_BUILD_PROMPT.md` for the full directive.
+
+## Quick start
+
+```bash
+pnpm install
+pnpm dev        # http://localhost:3000
+pnpm test       # 14 tests  ·  pnpm typecheck  ·  pnpm build
+```
+Full instructions: `QUICKSTART.md`. The core demo runs fully offline — no account, no key, no AI.
+
+The demo shows the hero workflow deterministically: TypeScript & PostgreSQL **Supported**,
+Deployment **Uncertain**, two case studies **Not yet supported**, Language **Unknown** — every
+state traceable to source-linked evidence, with no probabilities or opaque scores.
 
 ## How this gets built
 
 An autonomous agent team (see `AGENTS.md`) implements the directive in phases (`ROADMAP.md`).
 Every work unit ships with tests and honest status — no invented progress.
-
-## Quick start (once Phase 1 lands)
-
-A no-API-key, offline synthetic demo is a Phase 1 gate. Commands will live in `QUICKSTART.md`.

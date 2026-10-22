@@ -16,3 +16,6 @@ test-results/
 
 # local MCP server config (may hold auth) — do not commit
 .mcp.json
+
+# TypeScript incremental build cache
+*.tsbuildinfo

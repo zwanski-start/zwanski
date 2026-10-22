@@ -1,0 +1,151 @@
+/* ProofBridge OS — bespoke design tokens (directive §7).
+   Calm, human, quietly technical: charcoal/ivory surfaces, one restrained teal accent.
+   Accessible light + dark, WCAG AA contrast, reduced-motion aware. */
+
+:root {
+  --ivory: #f7f5ef;
+  --ivory-2: #efece3;
+  --charcoal: #1c1f24;
+  --charcoal-2: #2a2e35;
+  --ink: #23262b;
+  --ink-soft: #566070;
+  --line: #ddd8cc;
+  --teal: #0f766e;
+  --teal-ink: #0a524c;
+  --supported: #0f766e;
+  --uncertain: #b4690e;
+  --not-yet: #9a3f3f;
+  --unknown: #5a6473;
+  --radius: 10px;
+  --maxw: 1080px;
+
+  --bg: var(--ivory);
+  --bg-card: #fffdf8;
+  --fg: var(--ink);
+  --fg-soft: var(--ink-soft);
+  --border: var(--line);
+  --accent: var(--teal);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: var(--charcoal);
+    --bg-card: var(--charcoal-2);
+    --fg: #eceae3;
+    --fg-soft: #a8b0bd;
+    --border: #3a3f48;
+    --accent: #5ed6c9;
+    --supported: #5ed6c9;
+    --uncertain: #e0a95e;
+    --not-yet: #e08585;
+    --unknown: #9aa4b2;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: var(--charcoal);
+  --bg-card: var(--charcoal-2);
+  --fg: #eceae3;
+  --fg-soft: #a8b0bd;
+  --border: #3a3f48;
+  --accent: #5ed6c9;
+  --supported: #5ed6c9;
+  --uncertain: #e0a95e;
+  --not-yet: #e08585;
+  --unknown: #9aa4b2;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, nav, .mono, .tag, button, th {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 16px; }
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+}
+.site-header .wrap { display: flex; align-items: center; gap: 20px; min-height: 60px; flex-wrap: wrap; }
+.brand { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em; }
+.brand small { color: var(--fg-soft); font-weight: 400; }
+nav.main { display: flex; gap: 4px; flex-wrap: wrap; }
+nav.main a {
+  text-decoration: none; color: var(--fg-soft);
+  padding: 6px 10px; border-radius: 8px; font-size: 0.92rem;
+}
+nav.main a[aria-current="page"] { color: var(--fg); background: var(--ivory-2); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) nav.main a[aria-current="page"] { background: #353a43; }
+}
+
+.local-badge {
+  margin-left: auto; font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.75rem; color: var(--accent); border: 1px solid var(--accent);
+  padding: 2px 8px; border-radius: 999px;
+}
+
+main.wrap { padding-top: 28px; padding-bottom: 64px; }
+.page-title { font-size: 1.8rem; margin: 0 0 4px; letter-spacing: -0.02em; }
+.page-sub { color: var(--fg-soft); margin: 0 0 24px; }
+
+.card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px;
+}
+.grid { display: grid; gap: 16px; }
+@media (min-width: 720px) { .grid.two { grid-template-columns: 1fr 1fr; } }
+
+.tag {
+  display: inline-block; font-size: 0.72rem; font-weight: 600;
+  padding: 2px 9px; border-radius: 999px; border: 1px solid currentColor;
+}
+.tag.supported { color: var(--supported); }
+.tag.uncertain { color: var(--uncertain); }
+.tag.not-yet-supported { color: var(--not-yet); }
+.tag.unknown { color: var(--unknown); }
+.tag.demo { color: var(--fg-soft); }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-soft); }
+.mono { font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; font-size: 0.82rem; color: var(--fg-soft); }
+
+.meter { display: flex; height: 12px; border-radius: 999px; overflow: hidden; border: 1px solid var(--border); background: var(--bg); }
+.meter > span { display: block; height: 100%; }
+.meter .s-supported { background: var(--supported); }
+.meter .s-uncertain { background: var(--uncertain); }
+.meter .s-not-yet { background: var(--not-yet); }
+.meter .s-unknown { background: var(--unknown); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.8rem; color: var(--fg-soft); margin-top: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+
+.chain { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 0.85rem; }
+.chain .node { border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; background: var(--bg); }
+.chain .arrow { color: var(--fg-soft); }
+
+.muted { color: var(--fg-soft); }
+ul.clean { list-style: none; padding: 0; margin: 0; }
+ul.clean li { padding: 8px 0; border-bottom: 1px solid var(--border); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .card { transition: border-color 0.2s ease; }
+}

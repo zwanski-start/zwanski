@@ -1,0 +1,19 @@
+{
+  "name": "proofbridge-os",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ProofBridge OS — turn real work into portable proof, and portable proof into realistic next steps.",
+  "packageManager": "pnpm@12.11.2",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @proofbridge/web dev",
+    "build": "pnpm --filter @proofbridge/web build",
+    "start": "pnpm --filter @proofbridge/web start",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "lint": "pnpm -r --if-present lint"
+  },
+  "license": "MIT"
+}
