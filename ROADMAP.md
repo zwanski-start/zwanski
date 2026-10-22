@@ -25,6 +25,11 @@ Delivered vs planned are tracked separately.
   engine with human oversight, schema v2 migration, app-shell service worker, JSON dossier
   export, vault backup/restore, Playwright e2e of every §3 transition + reload/offline + restore.
   Not yet: interactive 2D Proof Graph, Bridge Plan editing, Dossier/DossierItem entities.
+- **Phase 2 (issue #5):** Chromium MV3 capture extension (WXT) with `activeTab` + `scripting` +
+  `storage` only, click → preview → confirm, pull-based handoff to the local app's Capture Inbox
+  (exact-origin check), file fallback, manifest audit in the build, extension threat model in
+  `SECURITY.md`, real-browser e2e (no passive capture, hostile pages inert, capture → import).
+  Not yet: Web Store packaging, Firefox, `CaptureEvent`/`ConsentGrant` entities.
 - **Phase 3 (partial, issue #6):** optional, consent-gated local-AI requirement suggestions
   that degrade to the deterministic parser (consent/egress unit + e2e tests); EN/FR/AR UI
   with RTL and localized dates (localization smoke tests); source-linked PDF dossier export.

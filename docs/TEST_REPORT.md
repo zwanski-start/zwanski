@@ -51,6 +51,50 @@ Environment: Linux, Node 26.7.0, pnpm 12.11.2, Playwright 1.64.1 driving Chromiu
 - Parser coverage is keyword-based; tested on the fixture listing, bullets/numbered lists,
   semicolons, whole-word alias matching, eligibility/language/portfolio detection, size bounds.
 
+## 2026-10-22 — Phase 2 gate (issue #5)
+
+Environment: Linux, Node 26.7.0, pnpm 12.11.2, Playwright 1.64.1, Chromium 154
+(`PW_CHROMIUM_PATH=/usr/bin/chromium`, headless, extension loaded with `--load-extension`).
+
+| Command | Result |
+| --- | --- |
+| `pnpm install --frozen-lockfile` | ✓ |
+| `pnpm lint` | ✓ no findings |
+| `pnpm typecheck` | ✓ 5 packages |
+| `pnpm test` | ✓ 72 passed — core 25, extension 13, fixtures 18, storage 8, web 8 |
+| `pnpm build` | ✓ web (10 static routes) + extension `.output/chrome-mv3` + "Manifest audit passed" |
+| `pnpm e2e` | ✓ web 4 passed, extension 3 passed |
+
+### Gate checklist
+
+- **No passive capture** — manifest audit (no host permissions/content scripts); e2e
+  "no passive capture": visiting hostile pages leaves the queue empty, manifest has no content
+  scripts; nothing is stored before *Confirm & queue*, *Discard* stores nothing.
+- **Hostile page cannot drive the extension** — `http://hostile.test` has no `chrome.runtime`;
+  `http://127.0.0.1:5299` (matches `externally_connectable`) gets
+  `{ok:false,"This page is not your ProofBridge app."}` for list, ack and a forged `save`.
+  Mutation control: dropping the exact-origin comparison in `lib/router.ts` → this test fails.
+  Router unit tests cover remote/look-alike/other-port/iframe/other-extension/no-origin senders
+  and out-of-protocol messages; outbox drops tampered stored entries.
+- **Hostile content inert** — captured text excludes `display:none` payload, main-world
+  `getSelection`/`innerText` overrides, password value and `<nav>`; `<img onerror>` markup is
+  kept as text and rendered in a `<pre>` (jsdom: no `<img>` element created); no dialog fires; the
+  injected requirement line stays *Unknown*; malformed extension responses are refused.
+- **Loadable artifact** — `apps/extension/.output/chrome-mv3` loaded unpacked in Chromium 154:
+  id `gnhdodgpophcenhldkahdaigmpodnmlm`, permissions `activeTab, scripting, storage`, no host
+  permissions; popup renders. CI uploads it as `proofbridge-extension-chrome-mv3`. Manual load +
+  capture flow: `QUICKSTART.md` §7.
+- **Import into the vault** — e2e imports the listing (Opportunity Lab: TypeScript *Supported*,
+  case studies *Not yet supported*, source label `Browser capture cap_… · hostile.test`) and the
+  excerpt (inspector: source address, `selected-webpage`); extension queue empty after ack; file
+  fallback imports a downloaded queue when the app origin is not the configured one.
+
+### Known gaps
+
+- Playwright's bundled Chromium could not be downloaded locally; CI installs it and runs the
+  extension suite with `channel: "chromium"` (full Chromium, new headless).
+- Chromium only; no Firefox/WebKit, no Web Store package.
+
 ## 2026-10-22 — Phase 3 gate (issue #6)
 
 Environment: Linux, Node 26.7.0, pnpm 12.11.2, Playwright 1.64.1 driving the system Chromium

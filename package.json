@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
-    "e2e": "pnpm --filter @proofbridge/web e2e"
+    "e2e": "pnpm --filter @proofbridge/web e2e && pnpm --filter @proofbridge/extension e2e",
+    "build:extension": "pnpm --filter @proofbridge/extension build"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

@@ -6,13 +6,18 @@ processes (dev/build) and in the user's browser (runtime).
 ## Packages
 
 ```
-apps/web            Next.js 16 App Router + React 19 + Tailwind 4. UI shell and screens.
+apps/web            Next.js 16 App Router + React 19 + Tailwind 4. UI shell and screens,
+                    incl. Capture Inbox (/inbox) which pulls browser captures from the extension.
+apps/extension      Chromium MV3 capture extension (WXT 0.21, vanilla TS popup + service worker).
+                    Click-to-capture → preview → confirm → local queue; answers only the app.
 packages/core       Zod schemas + inferred types for the domain model; integrity helpers
                     (dangling references, duplicate ids, explicit requirement counts);
                     deterministic requirement parser (parser.ts) and matching engine
                     (matching.ts); pure vault ops (ops.ts); dossier format (dossier.ts);
                     backup parse/serialize + dataset migration (backup.ts, migrate.ts);
-                    dependency-free PDF rendering of a dossier (pdf.ts).
+                    capture protocol shared with the extension (capture.ts: schemas, text/URL
+                    sanitisers, local-origin allowlist, pinned EXTENSION_ID); dependency-free PDF
+                    rendering of a dossier (pdf.ts).
 packages/ai         OPTIONAL, consent-gated AI suggestions: device-local settings + consent
                     (settings.ts), the single egress boundary `guardedFetch` (egress.ts) and
                     Ollama requirement-extraction suggestions that degrade to the
@@ -24,10 +29,10 @@ packages/fixtures   DEMO / SYNTHETIC dataset for the §3 hero workflow, schema-v
 packages/config     Shared tsconfig base.
 ```
 
-Dependency direction: `web → storage → core`, `web → fixtures → core`, `web → ai → core`. `core` has no runtime
-dependency other than Zod and never touches I/O.
+Dependency direction: `web → storage → core`, `web → fixtures → core`, `web → ai → core`,
+`extension → core`. `core` has no runtime dependency other than Zod and never touches I/O.
 
-Planned per directive §4 (not created yet): `apps/extension`, `packages/{evidence,graph,ui}`.
+Planned per directive §4 (not created yet): `packages/{evidence,graph,ui}`.
 
 ## Localization (EN / FR / AR)
 
@@ -90,10 +95,33 @@ backups). Cloud providers are not implemented (would need provider accounts — 
 
 ## Offline / PWA
 
-`public/sw.js` (registered in production builds only) precaches the six route HTML shells and
+`public/sw.js` (registered in production builds only) precaches the seven route HTML shells and
 the `/_next/static` assets they reference, serves hashed assets cache-first and navigations
 network-first with cached fallback. It never caches anything else; vault data is in IndexedDB
 and never travels over HTTP.
+
+## Browser capture (extension → app)
+
+Processes: the extension's popup page and service worker (Chrome extension origin), the
+captured tab (third-party origin; our extractor runs once in Chrome's isolated world), and the
+app tab (`http://localhost:<port>`). Chrome's site isolation and extension sandboxing are the
+only isolation; we add no container or process boundary of our own.
+
+1. User clicks the toolbar button on a page → popup. **Capture this opportunity** reads the
+   visible text of `<main>`/`[role=main]`/`<article>` (else `<body>`); **Save selected evidence**
+   reads the selection. One `chrome.scripting.executeScript` call (permission from `activeTab`)
+   returns `{ text, title }` as plain strings.
+2. Popup sanitises (core `sanitizeCapturedText`/`sanitizePageUrl`) and shows an editable preview.
+   **Confirm & queue** writes a strict `Capture` into `chrome.storage.local` (max 20).
+3. **Send to local ProofBridge** opens `<app address>/inbox` in a new tab. The Capture Inbox calls
+   `chrome.runtime.sendMessage(EXTENSION_ID, {type:"list"})`; the service worker answers only the
+   exact configured app origin from a top frame.
+4. The user imports each capture (opportunity → `addOpportunity`, evidence → `addEvidence` with
+   `captureMethod: selected-webpage`) or discards it; the app then sends `{type:"ack", ids}` and the
+   extension deletes those entries.
+5. Fallback: popup **Download as file** → `proofbridge-captures-<date>.json` → Capture Inbox file import.
+
+Protocol: `packages/core/src/capture.ts`. Threat model: `SECURITY.md` § Capture extension.
 
 ## Export formats
 

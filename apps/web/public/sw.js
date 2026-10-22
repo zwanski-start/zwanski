@@ -4,8 +4,8 @@
  * fetched over HTTP, so no private data can end up in this cache. Anything that is not a
  * same-origin GET for a shell route or a static asset is passed straight to the network.
  */
-const CACHE = "proofbridge-shell-v2";
-const SHELL_ROUTES = ["/", "/evidence", "/opportunities", "/graph", "/plan", "/share", "/settings"];
+const CACHE = "proofbridge-shell-v3";
+const SHELL_ROUTES = ["/", "/evidence", "/opportunities", "/graph", "/plan", "/inbox", "/share", "/settings"];
 const SHELL_FILES = ["/icon.svg", "/manifest.webmanifest"];
 const STATIC_PREFIX = "/_next/static/";
 

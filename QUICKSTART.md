@@ -53,7 +53,7 @@ pnpm lint        # ESLint (typescript-eslint, Next, React hooks)
 pnpm typecheck   # tsc --noEmit in every package
 pnpm test        # Vitest in every package (IndexedDB via fake-indexeddb)
 pnpm build       # Next.js production build
-pnpm e2e         # Playwright smoke on the production build (run `pnpm build` first), port 5290
+pnpm e2e         # Playwright: web app + extension, on the production build (run `pnpm build` first), port 5290
 ```
 
 `pnpm e2e` needs a Chromium once: `pnpm --filter @proofbridge/web exec playwright install chromium`.
@@ -72,6 +72,35 @@ Use `PORT=<port> pnpm e2e` if 5290 is taken.
    service worker and the vault from IndexedDB.
 5. **Share Studio** — download the dossier (JSON) or a vault backup; restore the backup in another
    browser profile.
+
+## 7. Capture extension (optional, Chromium)
+
+Build and load it (Chrome, Chromium, Edge, Brave ≥ 116):
+
+```sh
+pnpm build:extension          # → apps/extension/.output/chrome-mv3 (+ manifest permission audit)
+```
+
+1. Open `chrome://extensions`, switch on **Developer mode**, click **Load unpacked** and pick
+   `apps/extension/.output/chrome-mv3`. The id shown must be `gnhdodgpophcenhldkahdaigmpodnmlm`
+   (pinned by the manifest key; the app talks to exactly this id).
+2. Pin **ProofBridge Capture** to the toolbar. If your app is not on `http://localhost:3000`, open
+   the popup → **Settings**, enter the app address (e.g. `http://localhost:4000`) → **Save**.
+3. On a job listing page, click the toolbar button → **Capture this opportunity** (visible page
+   text) or select text first → **Save selected evidence**.
+4. Review/edit the preview → **Confirm & queue** (or **Discard** — nothing is saved).
+5. **Send to local ProofBridge** opens the app's **Capture Inbox**. For each capture choose
+   *Opportunity* (requirements are parsed) or *Evidence* (add your claim) → import, or discard.
+   Imported captures are removed from the extension.
+6. No app running or a different origin? Popup → **Download as file**, then Capture Inbox →
+   **Import a capture file**.
+
+The extension has no host permissions and no content scripts: it reads a page only when you
+click a capture button. Threat model: `SECURITY.md` § Capture extension.
+
+Extension tests: `pnpm --filter @proofbridge/extension test` (unit) and
+`pnpm --filter @proofbridge/extension e2e` (builds the e2e variant, loads it in Chromium next to
+the production web app — run `pnpm build` first; honours `PW_CHROMIUM_PATH` and `PORT`).
 
 Next.js telemetry is disabled by the app's scripts (`apps/web/scripts/next.mjs`).
 

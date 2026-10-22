@@ -76,6 +76,28 @@ Engineering tradeoffs and assumptions (ADR-lite). Agents append here instead of 
     default; `PW_CHROMIUM_PATH` allows a system Chromium where `playwright install` is not
     possible. CI installs Playwright's Chromium and runs it after the build.
 
+- **2026-10-22 — Phase 2 capture extension (issue #5).**
+  - **WXT 0.21, vanilla TS popup** (no React) to keep the extension bundle small and auditable;
+    `imports: false` so every dependency is explicit. Protocol, schemas and sanitisers live in
+    `core/capture.ts`, shared by extension and app.
+  - **`activeTab` + `scripting`, no host permissions, no content scripts.** Capture can only start
+    from a popup click; the extractor is one self-contained function run in the isolated world
+    returning plain text (never HTML), so there is no markup to sanitise beyond text normalisation.
+  - **Pull, not push.** The app asks the extension for confirmed captures
+    (`externally_connectable`, localhost) instead of the extension injecting into or posting to the
+    app. A page can therefore never write into the vault through the extension, and there is no
+    localhost mutation endpoint at all. Exact-origin check against a user-set app address (default
+    `http://localhost:3000`) because `externally_connectable` cannot pin a port.
+  - **Pinned extension id via a public manifest `key`.** The app must know whom to address;
+    only the public key is committed. A Web Store build would get a different id (Phase 4).
+  - **Two-step consent:** confirm in the popup preview, then import explicitly in the Capture
+    Inbox (choose opportunity vs evidence, add a claim). Evidence from captures is private.
+  - **Duplicate detection** by embedding the capture id in the source label
+    (`Browser capture cap_… · host`), so a capture still listed after a failed ack is flagged.
+  - **e2e test build** (`wxt build --mode e2e`) adds a host permission for the fictional
+    `hostile.test` and a `?tab=` popup parameter, both compiled out of production; hostile pages
+    are served via Playwright routing, so no extra port is used.
+
 - **2026-10-22 — Phase 3 (issue #6).**
   - **New `packages/ai`, pure and injected.** Settings, consent, the egress guard and
     suggestion parsing are plain functions with `fetch` and the clock passed in, so the

@@ -1,0 +1,28 @@
+{
+  "name": "@proofbridge/extension",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ProofBridge capture extension (Chromium Manifest V3, WXT): click-to-capture with preview + consent",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build && node scripts/audit-manifest.mjs",
+    "build:e2e": "wxt build --mode e2e",
+    "zip": "wxt zip",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "e2e": "wxt build --mode e2e && playwright test"
+  },
+  "dependencies": {
+    "@proofbridge/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@proofbridge/config": "workspace:*",
+    "@types/chrome": "^0.3.6",
+    "@types/node": "^24.19.2",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5",
+    "wxt": "^0.21.4"
+  }
+}

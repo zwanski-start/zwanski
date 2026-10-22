@@ -7,3 +7,4 @@ export * from "./ops";
 export * from "./dossier";
 export * from "./backup";
 export * from "./pdf";
+export * from "./capture";

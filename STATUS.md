@@ -82,6 +82,43 @@ _Truth-based progress only. Do not mark unimplemented features complete._
   gap-driven task suggestions; CSP headers + threat model; then Phase 2 extension.
 - **Founder approval required:** none.
 
+## 2026-10-22 — Phase 2: Chromium MV3 capture extension + trust boundaries (issue #5)
+- **What works:** `apps/extension` (WXT 0.21, MV3) with only `activeTab`, `scripting`, `storage`
+  — no host permissions, no content scripts, no `<all_urls>`; a manifest audit fails `pnpm build`
+  if that changes. Toolbar popup: **Capture this opportunity** (visible text of the page's main
+  content) / **Save selected evidence** (selection) → plain-text extraction in Chrome's isolated
+  world → sanitised, editable preview → **Confirm & queue** (or Discard; nothing stored) → local
+  queue (max 20, delete/delete-all). **Send to local ProofBridge** opens the app's new **Capture
+  Inbox** (`/inbox`), which pulls the queue over `externally_connectable` (localhost only; the
+  background also requires the exact configured app origin, a top frame and the strict protocol:
+  `ping`/`list`/`ack` — nothing can create or trigger a capture). The user imports each capture
+  as an opportunity (requirements parsed) or private evidence (`captureMethod:
+  selected-webpage`, page URL + capture time as provenance) or discards it; imported captures
+  are acked and removed from the extension. Fallback: download the queue as a JSON capture file
+  and import it in the inbox. Extension id pinned by a public manifest key. Threat model:
+  `SECURITY.md` § Capture extension; boundaries: `ARCHITECTURE.md` § Browser capture.
+- **Tests:** `pnpm lint` ✓, `pnpm typecheck` ✓ (5 packages), `pnpm test` ✓ 72 tests (core 25,
+  extension 13, fixtures 18, storage 8, web 8), `pnpm build` ✓ (web 10 routes + extension build +
+  manifest audit), `pnpm e2e` ✓ web 4 + extension 3 Playwright tests in Chromium 154 with the
+  extension loaded unpacked: no passive capture (hostile remote page has no `chrome.runtime`;
+  hostile page on another local origin gets `ok:false` for list/ack/forged save; queue empty;
+  no content scripts); click → preview → confirm → import with hidden payload, main-world
+  monkey-patching, password field and nav excluded and `<img onerror>` text kept inert; injected
+  "ignore all prior instructions" line stays an *Unknown* requirement; app made no off-machine
+  requests; file fallback when the origin is not the configured one. Control: removing the
+  exact-origin check makes the hostile-local test fail. Details: `docs/TEST_REPORT.md`.
+- **What does not work / limits:** no Chrome Web Store / Firefox build; `chrome.storage.local`
+  and IndexedDB are unencrypted; any page on the configured app origin can read/clear the queue;
+  `innerText` still includes visually-hidden-but-rendered text (the preview is the control);
+  `CaptureEvent`/`ConsentGrant` entities not modelled (provenance lives on source/opportunity);
+  e2e needs a test build with a host permission for the fictional `hostile.test` (Playwright cannot
+  click the toolbar); locally ran on system Chromium (`PW_CHROMIUM_PATH`) — CI uses Playwright's.
+- **Security notes:** see `SECURITY.md`. No network calls added; no credentials, cookies, history
+  or form values are read.
+- **Next concrete step:** interactive Proof Graph, Bridge Plan editing, CSP headers; Phase 3
+  provider-optional intelligence + localization.
+- **Founder approval required:** none (Web Store publishing would need an account — not done).
+
 ## 2026-10-22 — Phase 3: optional provider intelligence + EN/FR/AR + PDF (issue #6)
 - **What works:**
   - **Optional AI, off by default.** New `packages/ai`. Settings → "AI assistance" accepts only
@@ -108,9 +145,12 @@ _Truth-based progress only. Do not mark unimplemented features complete._
   fallback; EN→FR→AR RTL smoke with reload; PDF export). Locally the PDF also passes
   `qpdf --check`, and that test is skipped where qpdf is not installed. Details:
   `docs/TEST_REPORT.md`.
+  After merging Phase 2 (#11) into this branch: lint ✓, typecheck ✓ (6 packages), 96 unit
+  tests ✓, build ✓, web e2e 10/10 ✓, extension e2e 3/3 ✓.
 - **What does not work / limits:**
   - **Translation is partial.** Evidence Vault forms and inspector, requirement review
-    controls and the matcher's rationale sentences are still English only.
+    controls, the matcher's rationale sentences and the Capture Inbox page body (from Phase 2;
+    only its nav entry is translated) are still English only.
   - **PDF character set.** The PDF uses the built-in Helvetica/WinAnsi fonts, so Arabic (and
     any non-Western-European) text is replaced with "?". The UI says so and gives a count, and
     the JSON dossier stays lossless. With an Arabic UI, PDF labels are English. Embedding an
